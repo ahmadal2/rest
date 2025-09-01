@@ -1,7 +1,7 @@
 // src/app/auth/callback/route.tsx
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { createRouteHandlerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export async function GET(request: NextRequest) {
@@ -19,7 +19,35 @@ export async function GET(request: NextRequest) {
   if (code) {
     try {
       const cookieStore = cookies()
-      const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              try {
+                cookieStore.set({ name, value, ...options })
+              } catch (error) {
+                // The `set` method was called from a Server Component.
+                // This can be ignored if you have middleware refreshing
+                // user sessions.
+              }
+            },
+            remove(name: string, options: CookieOptions) {
+              try {
+                cookieStore.delete({ name, ...options })
+              } catch (error) {
+                // The `delete` method was called from a Server Component.
+                // This can be ignored if you have middleware refreshing
+                // user sessions.
+              }
+            },
+          },
+        }
+      )
       
       console.log('Exchanging code for session:', code)
       const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
