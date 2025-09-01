@@ -95,12 +95,20 @@ export async function GET(request: NextRequest) {
           } else if (fetchError) {
             console.error('Error checking for existing user:', fetchError.message || fetchError)
           }
-        } catch (profileError) {
-          console.error('Exception handling user profile:', profileError.message || profileError)
+        } catch (profileError: unknown) {
+          console.error('Exception handling user profile:', profileError)
+          // Type guard to check if error has a message property
+          if (profileError instanceof Error) {
+            console.error('Exception handling user profile:', profileError.message)
+          }
         }
       }
-    } catch (exchangeError) {
-      console.error('Exception exchanging code for session:', exchangeError.message || exchangeError)
+    } catch (exchangeError: unknown) {
+      console.error('Exception exchanging code for session:', exchangeError)
+      // Type guard to check if error has a message property
+      if (exchangeError instanceof Error) {
+        console.error('Exception exchanging code for session:', exchangeError.message)
+      }
       return NextResponse.redirect(new URL('/auth/signin?error=auth_failed&message=Authentication failed', request.url))
     }
   }

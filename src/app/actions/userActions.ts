@@ -20,8 +20,13 @@ export async function createUserProfile(userId: string, email: string, username:
     }
 
     return { success: true }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Exception creating user profile:', error)
-    return { success: false, error: error.message }
+    // Type guard to check if error has a message property
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    // Fallback for unknown error types
+    return { success: false, error: 'An unknown error occurred' }
   }
 }

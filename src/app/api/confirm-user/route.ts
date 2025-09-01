@@ -31,7 +31,12 @@ export async function POST(request: Request) {
     }
     
     return NextResponse.json({ success: true, message: 'User confirmed successfully' })
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    // Type guard to check if error has a message property
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    // Fallback for unknown error types
+    return NextResponse.json({ error: 'An unknown error occurred' }, { status: 500 })
   }
 }

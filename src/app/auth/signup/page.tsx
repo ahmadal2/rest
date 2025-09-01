@@ -58,12 +58,17 @@ export default function SignUp() {
           router.push('/')
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Signup error:', error)
-      if (error.message.includes('already been registered')) {
-        setError('This email address is already registered. Please sign in instead.')
+      // Type guard to check if error has a message property
+      if (error instanceof Error) {
+        if (error.message.includes('already been registered')) {
+          setError('This email address is already registered. Please sign in instead.')
+        } else {
+          setError(error.message || 'An error occurred during signup. Please try again.')
+        }
       } else {
-        setError(error.message || 'An error occurred during signup. Please try again.')
+        setError('An error occurred during signup. Please try again.')
       }
     } finally {
       setLoading(false)

@@ -43,9 +43,14 @@ export default function SignIn() {
       // Successfully signed in
       console.log('Sign in successful, redirecting to home')
       router.push('/')
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Unexpected sign in error:', error)
-      setError('An unexpected error occurred. Please try again.')
+      // Type guard to check if error has a message property
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -73,9 +78,14 @@ export default function SignIn() {
         setError('')
         alert('Confirmation email resent! Please check your inbox.')
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Unexpected error resending confirmation email:', error)
-      setError('Failed to resend confirmation email. Please try again.')
+      // Type guard to check if error has a message property
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError('Failed to resend confirmation email. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
