@@ -1,5 +1,4 @@
 'use client'
-
 import { useAuthStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
@@ -39,12 +38,11 @@ export default function Profile() {
   // Move function declaration before useEffect
   const fetchProfileData = async () => {
     setLoading(true)
-
     try {
-      // Posts
+      // Posts - Updated to include title and created_at
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
-        .select('id, media_url')
+        .select('id, media_url, title, created_at')
         .eq('user_id', user.id)
       
       if (postsError) {
@@ -52,7 +50,7 @@ export default function Profile() {
       } else {
         setPosts(postsData || [])
       }
-
+      
       // Follower
       const { count: followersCount, error: followersError } = await supabase
         .from('follows')
@@ -64,7 +62,7 @@ export default function Profile() {
       } else {
         setFollowers(followersCount || 0)
       }
-
+      
       // Following
       const { count: followingCount, error: followingError } = await supabase
         .from('follows')
@@ -76,22 +74,9 @@ export default function Profile() {
       } else {
         setFollowing(followingCount || 0)
       }
-
-      // Ist der aktuelle User diesem Profil gefolgt?
-      if (user.id !== user.id) {
-        const { data, error: followError } = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', user.id)
-          .eq('following_id', user.id)
-          .single()
-        
-        if (followError && followError.code !== 'PGRST116') {
-          console.error('Error checking follow status:', followError)
-        } else {
-          setIsFollowing(!!data)
-        }
-      }
+      
+      // Note: Removed the follow status check since this is the user's own profile
+      
     } catch (error) {
       console.error('Exception fetching profile data:', error)
     } finally {
@@ -148,7 +133,6 @@ export default function Profile() {
       <div className="p-6 border-b border-gray-800">
         <h1 className="text-2xl font-bold">Profil: {user.username}</h1>
       </div>
-
       <div className="p-6">
         {/* Statistiken */}
         <div className="flex gap-8 text-center mb-6">
@@ -162,19 +146,9 @@ export default function Profile() {
             <strong>{following}</strong> Following
           </Link>
         </div>
-
-        {/* Follow-Button */}
-        {user.id !== user.id && (
-          <button
-            onClick={isFollowing ? handleUnfollow : handleFollow}
-            className={`px-4 py-1 rounded text-sm ${
-              isFollowing ? 'bg-gray-600' : 'bg-blue-600'
-            }`}
-          >
-            {isFollowing ? 'Unfollow' : 'Follow'}
-          </button>
-        )}
-
+        
+        {/* Removed the follow button since this is the user's own profile */}
+        
         {/* Posts Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
           {posts.map((post) => (
