@@ -1,57 +1,39 @@
+// src/app/test-supabase/page.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
-export default function TestSupabase() {
-  const [status, setStatus] = useState('Testing...')
-  const [session, setSession] = useState(null)
+export default function TestSupabasePage() {
+  const [status, setStatus] = useState('')
 
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        // Test basic connection
-        const { data, error } = await supabase.from('users').select('count').single()
-        
-        if (error) {
-          setStatus(`Error: ${error.message}`)
-          return
-        }
-        
+  const testConnection = async () => {
+    try {
+      const { data, error } = await supabase.from('users').select('count').single()
+      
+      if (error) {
+        setStatus(`Error: ${error.message}`)
+      } else {
         setStatus(`Success: ${JSON.stringify(data)}`)
-      } catch (err) {
-        setStatus(`Exception: ${err.message}`)
       }
+    } catch (err) {
+      // Fix: Check if err is an Error instance before accessing message
+      setStatus(`Exception: ${err instanceof Error ? err.message : String(err)}`)
     }
-
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) {
-          console.error('Session error:', error)
-        } else {
-          setSession(session)
-          console.log('Session:', session)
-        }
-      } catch (err) {
-        console.error('Session exception:', err)
-      }
-    }
-
-    testConnection()
-    checkSession()
-  }, [])
+  }
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-2xl font-bold mb-4">Supabase Test</h1>
-      <p>Status: {status}</p>
-      <p>Session: {session ? 'Found' : 'Not found'}</p>
-      {session && (
-        <div className="mt-4 p-4 bg-gray-800 rounded">
-          <pre>{JSON.stringify(session, null, 2)}</pre>
-        </div>
-      )}
+      <h1 className="text-2xl font-bold mb-4">Test Supabase Connection</h1>
+      <button 
+        onClick={testConnection}
+        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Test Connection
+      </button>
+      <div className="mt-4 p-4 bg-gray-800 rounded">
+        {status}
+      </div>
     </div>
   )
 }
