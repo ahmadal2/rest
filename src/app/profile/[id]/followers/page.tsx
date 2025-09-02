@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
-// Typdefinitionen
 interface User {
   id: string
   username: string
@@ -16,13 +15,8 @@ interface Follower {
   users: User
 }
 
-// Korrekte Typisierung für Next.js PageProps
-interface FollowersPageProps {
-  params: { id: string }
-  searchParams?: { [key: string]: string | string[] }
-}
-
-export default function Followers({ params }: FollowersPageProps) {
+// Page-Funktion direkt mit Typen für params
+export default function FollowersPage({ params }: { params: { id: string } }) {
   const [followers, setFollowers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -41,13 +35,10 @@ export default function Followers({ params }: FollowersPageProps) {
         `)
         .eq('following_id', params.id)
 
-      if (error) {
-        console.error('Fehler beim Laden der Follower:', error)
-      } else {
-        setFollowers(data?.map((f: Follower) => f.users) || [])
-      }
-    } catch (error) {
-      console.error('Exception fetching followers:', error)
+      if (error) console.error(error)
+      else setFollowers(data?.map((f: Follower) => f.users) || [])
+    } catch (err) {
+      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -73,11 +64,11 @@ export default function Followers({ params }: FollowersPageProps) {
               className="flex items-center gap-3 p-3 bg-gray-900 rounded hover:bg-gray-800"
             >
               <img
-                src={user.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username}
+                src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                 alt={user.username}
                 className="w-10 h-10 rounded-full"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username
+                  e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
                 }}
               />
               <span>{user.username}</span>
