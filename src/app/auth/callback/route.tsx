@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
-      const cookieStore = await cookies()
+      // ✅ FIX: cookieStore definieren
+      const cookieStore = cookies()
 
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
       
       if (user) {
         try {
-          const serverSupabase = createServerSupabaseClient()
+          const serverSupabase = await createServerSupabaseClient()
           const { data: existingUser, error: fetchError } = await serverSupabase
             .from('users')
             .select('id')

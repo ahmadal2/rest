@@ -6,8 +6,8 @@ import { cookies } from 'next/headers'
  * Erstellt einen Supabase-Client, der im Server-Kontext läuft
  * und automatisch die Cookies (Session) verwaltet.
  */
-export function createServerSupabaseClient() {
-  const cookieStore = cookies()
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 export async function createUserProfile(userId: string, email: string, username: string) {
   try {
     // Create a server-side Supabase client
-    const supabase = createServerSupabaseClient()
+    const supabase = await createServerSupabaseClient()
     
     const { error } = await supabase.from('users').insert({
       id: userId,

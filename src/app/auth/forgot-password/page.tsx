@@ -26,7 +26,7 @@ export default function ForgotPassword() {
       if (error) throw error
 
       setMessage('Password reset instructions have been sent to your email.')
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
       } else {
