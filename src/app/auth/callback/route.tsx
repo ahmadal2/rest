@@ -1,4 +1,3 @@
-// src/app/auth/callback/route.tsx
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
@@ -10,20 +9,15 @@ export async function GET(request: NextRequest) {
   const error = requestUrl.searchParams.get('error')
   const errorDescription = requestUrl.searchParams.get('error_description')
 
-  // Handle OAuth errors
   if (error) {
-    console.error('OAuth error:', error, errorDescription)
     return NextResponse.redirect(
-      new URL(
-        `/auth/signin?error=${encodeURIComponent(error)}&message=${encodeURIComponent(errorDescription || '')}`,
-        request.url
-      )
+      `/auth/signin?error=${encodeURIComponent(error)}&message=${encodeURIComponent(errorDescription || '')}`
     )
   }
 
   if (code) {
     try {
-      // ✅ FIX: cookieStore definieren
+      // ✅ Korrektur: cookies() ist **nicht async**
       const cookieStore = cookies()
 
       const supabase = createServerClient(
@@ -37,89 +31,43 @@ export async function GET(request: NextRequest) {
             set(name: string, value: string, options: CookieOptions) {
               try {
                 cookieStore.set({ name, value, ...options })
-              } catch {
-                // The `set` method was called from a Server Component.
-              }
+              } catch {}
             },
             remove(name: string, options: CookieOptions) {
               try {
                 cookieStore.delete({ name, ...options })
-              } catch {
-                // The `delete` method was called from a Server Component.
-              }
+              } catch {}
             },
           },
         }
       )
-      
-      console.log('Exchanging code for session:', code)
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-      
-      if (exchangeError) {
-        console.error('Error exchanging code for session:', exchangeError.message || exchangeError)
-        return NextResponse.redirect(
-          new URL('/auth/signin?error=auth_failed&message=Failed to authenticate', request.url)
-        )
-      }
-      
-      // Get user data from the session
-      const user = data?.session?.user
-      console.log('Session user:', user?.id)
-      
-      if (user) {
-        try {
-          const serverSupabase = await createServerSupabaseClient()
-          const { data: existingUser, error: fetchError } = await serverSupabase
-            .from('users')
-            .select('id')
-            .eq('id', user.id)
-            .single()
-          
-          console.log('Existing user check:', { existingUser, fetchError })
-          
-          if (!existingUser && !fetchError) {
-            const username =
-              user.user_metadata?.username ||
-              user.email?.split('@')[0] ||
-              `user_${user.id.substring(0, 8)}`
 
-            console.log('Creating new user profile:', { id: user.id, email: user.email, username })
-            
-            const { error: insertError } = await serverSupabase.from('users').insert({
-              id: user.id,
-              email: user.email,
-              username: username,
-              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
-            })
-            
-            if (insertError) {
-              console.error('Error creating user profile:', insertError.message || insertError)
-            } else {
-              console.log('User profile created successfully')
-            }
-          } else if (existingUser) {
-            console.log('User profile already exists')
-          } else if (fetchError) {
-            console.error('Error checking for existing user:', fetchError.message || fetchError)
-          }
-        } catch (profileError: unknown) {
-          console.error('Exception handling user profile:', profileError)
-          if (profileError instanceof Error) {
-            console.error('Exception handling user profile:', profileError.message)
-          }
+      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      if (exchangeError) throw exchangeError
+
+      const user = data?.session?.user
+      if (user) {
+        const serverSupabase = await createServerSupabaseClient()
+        const { data: existingUser } = await serverSupabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+
+        if (!existingUser) {
+          const username = user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.substring(0, 8)}`
+          await serverSupabase.from('users').insert({
+            id: user.id,
+            email: user.email,
+            username,
+            avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+          })
         }
       }
-    } catch (exchangeError: unknown) {
-      console.error('Exception exchanging code for session:', exchangeError)
-      if (exchangeError instanceof Error) {
-        console.error('Exception exchanging code for session:', exchangeError.message)
-      }
-      return NextResponse.redirect(
-        new URL('/auth/signin?error=auth_failed&message=Authentication failed', request.url)
-      )
+    } catch {
+      return NextResponse.redirect('/auth/signin?error=auth_failed&message=Authentication failed')
     }
   }
 
-  console.log('Redirecting to home page')
-  return NextResponse.redirect(new URL('/', request.url))
+  return NextResponse.redirect('/')
 }
