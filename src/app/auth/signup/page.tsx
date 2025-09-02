@@ -18,8 +18,7 @@ export default function SignUp() {
   const [requiresConfirmation, setRequiresConfirmation] = useState(false)
   const router = useRouter()
 
-  const handleSignUp = async (e) => {
-    e.preventDefault()
+const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {    e.preventDefault()
     setLoading(true)
     setError('')
     setSuccess(false)
