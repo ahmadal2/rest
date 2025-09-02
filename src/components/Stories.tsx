@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
@@ -10,6 +9,20 @@ interface User {
   id: string
   username: string
   avatar_url: string
+}
+
+// Interface for the raw data from Supabase
+interface RawStory {
+  id: string
+  media_url: string
+  media_type: string
+  created_at: string
+  user_id: string
+  users: Array<{
+    id: string
+    username: string
+    avatar_url: string
+  }>
 }
 
 interface Story {
@@ -25,9 +38,9 @@ export default function Stories() {
   const user = useAuthStore((state) => state.user) as User
   const [stories, setStories] = useState<Story[]>([])
   const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null)
-
+  
   // Fetch user data for a specific user ID
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (userId: string): Promise<User | null> => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -46,7 +59,7 @@ export default function Stories() {
       return null
     }
   }
-
+  
   const fetchStories = async () => {
     try {
       const { data, error } = await supabase
@@ -61,24 +74,31 @@ export default function Stories() {
         `)
         .filter('expires_at', 'gt', new Date().toISOString())
         .order('created_at', { ascending: false })
-
+      
       if (error) {
         console.error('Fehler bei Stories:', error.message || error)
       } else {
         // Handle the nested user data properly
-        const storiesData: Story[] = await Promise.all(data.map(async (story: Story) => {
-          let userData = story.users && story.users.length > 0 ? story.users[0] : null
-          
-          // If user data is missing but we have a user_id, fetch the user data
-          if (!userData && story.user_id) {
-            userData = await fetchUserData(story.user_id)
-          }
-          
-          return {
-            ...story,
-            users: userData
-          }
-        }))
+        const storiesData: Story[] = await Promise.all(
+          (data as RawStory[]).map(async (story: RawStory) => {
+            // Extract the first user from the array or null if empty
+            let userData = story.users && story.users.length > 0 ? story.users[0] : null
+            
+            // If user data is missing but we have a user_id, fetch the user data
+            if (!userData && story.user_id) {
+              userData = await fetchUserData(story.user_id)
+            }
+            
+            return {
+              id: story.id,
+              media_url: story.media_url,
+              media_type: story.media_type,
+              created_at: story.created_at,
+              user_id: story.user_id,
+              users: userData
+            }
+          })
+        )
         
         setStories(storiesData || [])
       }
@@ -86,24 +106,24 @@ export default function Stories() {
       console.error('Exception fetching stories:', error)
     }
   }
-
+  
   useEffect(() => {
     if (!user) return
     fetchStories()
   }, [user])
-
+  
   // Add a function to handle story click
   const handleStoryClick = (index: number) => {
     setSelectedStoryIndex(index)
   }
-
+  
   const handleNavigate = (index: number) => {
     // Use setTimeout to avoid updating state during render
     setTimeout(() => {
       setSelectedStoryIndex(index)
     }, 0)
   }
-
+  
   return (
     <>
       <div className="flex space-x-4 overflow-x-auto pb-4 p-4 bg-black border-b border-gray-800">
@@ -122,7 +142,6 @@ export default function Stories() {
             <span className="text-xs text-white mt-1">Your Story</span>
           </div>
         )}
-
         {stories.map((story, index) => (
           <div 
             key={story.id} 
@@ -145,7 +164,6 @@ export default function Stories() {
           </div>
         ))}
       </div>
-
       {selectedStoryIndex !== null && stories[selectedStoryIndex] && (
         <StoryViewer 
           storyId={stories[selectedStoryIndex].id} 

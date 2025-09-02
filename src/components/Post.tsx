@@ -111,7 +111,7 @@ export default function Post({ post: initialPost }: { post: PostType }) {
     }
   }
 
-  const fetchComments = async () => {
+const fetchComments = async () => {
     try {
       const { data, error } = await supabase
         .from('comments')
@@ -125,10 +125,20 @@ export default function Post({ post: initialPost }: { post: PostType }) {
       }
       
       // Handle the nested user data properly
-      const commentsData: Comment[] = data.map((comment: Comment) => ({
-        ...comment,
-        users: comment.users && comment.users.length > 0 ? comment.users[0] : { username: 'Unknown' }
-      }))
+      const commentsData: Comment[] = (data as any[]).map((comment) => {
+        // Extract user data from the array structure returned by Supabase
+        const userData = comment.users && comment.users.length > 0 
+          ? comment.users[0] 
+          : { username: 'Unknown' };
+        
+        return {
+          id: comment.id,
+          text: comment.text,
+          user_id: comment.user_id,
+          users: userData
+        };
+      });
+      
       setComments(commentsData || [])
     } catch (error: unknown) {
       if (error instanceof Error) {
