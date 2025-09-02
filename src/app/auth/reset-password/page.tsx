@@ -30,7 +30,7 @@ export default function ResetPassword() {
     }
   }, [])
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
@@ -49,15 +49,7 @@ export default function ResetPassword() {
     }
 
     try {
-      // Set the token for Supabase auth
-      const { error: tokenError } = await supabase.auth.verifyOtp({
-        token,
-        type: 'recovery'
-      })
-
-      if (tokenError) throw tokenError
-
-      // Update the password
+      // Update the password directly
       const { error: updateError } = await supabase.auth.updateUser({ password })
 
       if (updateError) throw updateError
@@ -66,8 +58,12 @@ export default function ResetPassword() {
       setTimeout(() => {
         router.push('/auth/signin')
       }, 3000)
-    } catch (error) {
-      setError(error.message)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError('An unexpected error occurred')
+      }
     } finally {
       setLoading(false)
     }

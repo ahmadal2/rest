@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
-      // ✅ Korrektur: cookies() ist **nicht async**
-      const cookieStore = cookies()
+      // ✅ Korrektur: In Route Handlers ist cookies() async
+      const cookieStore = await cookies()
 
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,16 +26,16 @@ export async function GET(request: NextRequest) {
         {
           cookies: {
             get(name: string) {
-              return cookieStore.get(name)?.value
+              return cookieStore.get(name)?.value;
             },
             set(name: string, value: string, options: CookieOptions) {
               try {
-                cookieStore.set({ name, value, ...options })
+                cookieStore.set(name, value, options)
               } catch {}
             },
             remove(name: string, options: CookieOptions) {
               try {
-                cookieStore.delete({ name, ...options })
+                cookieStore.delete(name)
               } catch {}
             },
           },
