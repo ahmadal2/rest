@@ -38,8 +38,9 @@ export default function FollowersPage() {
         .eq('following_id', id)
 
       if (error) console.error(error)
-      else setFollowers(data?.map((f: Follower) => f.users) || [])
-    } catch (err) {
+       
+      else setFollowers(data?.flatMap((f) => f.users) || []) 
+   } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
