@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
@@ -23,6 +22,16 @@ interface PostType {
   users: User | null
 }
 
+// Add this interface for the raw comment data from Supabase
+interface RawComment {
+  id: string
+  text: string
+  user_id: string
+  users: Array<{
+    username: string
+  }>
+}
+
 interface Comment {
   id: string
   text: string
@@ -41,7 +50,7 @@ export default function Post({ post: initialPost }: { post: PostType }) {
   const [commentCount, setCommentCount] = useState(0)
   const [newComment, setNewComment] = useState('')
   const [showComments, setShowComments] = useState(false)
-
+  
   // Move all function declarations before useEffect hooks
   const fetchLikes = async () => {
     try {
@@ -64,7 +73,7 @@ export default function Post({ post: initialPost }: { post: PostType }) {
       }
     }
   }
-
+  
   const fetchCommentCount = async () => {
     try {
       const { count, error } = await supabase
@@ -86,7 +95,7 @@ export default function Post({ post: initialPost }: { post: PostType }) {
       }
     }
   }
-
+  
   const checkIfLiked = async () => {
     if (!user || !post?.id) return
     try {
@@ -110,8 +119,8 @@ export default function Post({ post: initialPost }: { post: PostType }) {
       }
     }
   }
-
-const fetchComments = async () => {
+  
+  const fetchComments = async () => {
     try {
       const { data, error } = await supabase
         .from('comments')
@@ -125,19 +134,14 @@ const fetchComments = async () => {
       }
       
       // Handle the nested user data properly
-      const commentsData: Comment[] = (data as any[]).map((comment) => {
-        // Extract user data from the array structure returned by Supabase
-        const userData = comment.users && comment.users.length > 0 
+      const commentsData: Comment[] = (data as RawComment[]).map((comment: RawComment) => ({
+        id: comment.id,
+        text: comment.text,
+        user_id: comment.user_id,
+        users: comment.users && comment.users.length > 0 
           ? comment.users[0] 
-          : { username: 'Unknown' };
-        
-        return {
-          id: comment.id,
-          text: comment.text,
-          user_id: comment.user_id,
-          users: userData
-        };
-      });
+          : { username: 'Unknown' }
+      }))
       
       setComments(commentsData || [])
     } catch (error: unknown) {
@@ -148,7 +152,7 @@ const fetchComments = async () => {
       }
     }
   }
-
+  
   // Fetch user data if it's missing
   const fetchUserData = async () => {
     if (post.users) return // User data already exists
@@ -179,7 +183,7 @@ const fetchComments = async () => {
       }
     }
   }
-
+  
   const toggleLike = async () => {
     if (!user || !post?.id) return
     try {
@@ -241,7 +245,7 @@ const fetchComments = async () => {
       }
     }
   }
-
+  
   const addComment = async () => {
     if (!newComment.trim() || !user || !post?.id) return
     try {
@@ -290,7 +294,7 @@ const fetchComments = async () => {
       }
     }
   }
-
+  
   // Add delete comment functionality
   const deleteComment = async (commentId: string) => {
     if (!user) return
@@ -317,7 +321,7 @@ const fetchComments = async () => {
       }
     }
   }
-
+  
   // Add delete post functionality
   const deletePost = async () => {
     if (!user || post.user_id !== user.id) return
@@ -354,7 +358,7 @@ const fetchComments = async () => {
       alert('Failed to delete post. Please try again.')
     }
   }
-
+  
   useEffect(() => {
     if (!post?.id) return
     fetchLikes()
@@ -363,11 +367,10 @@ const fetchComments = async () => {
     checkIfLiked()
     fetchUserData() // Fetch user data if missing
   }, [post?.id, user])
-
+  
   // Realtime: Live-Likes
   useEffect(() => {
     if (!post?.id) return
-
     const channel = supabase
       .channel(`likes-${post.id}`)
       .on('postgres_changes', {
@@ -383,16 +386,14 @@ const fetchComments = async () => {
         filter: `post_id=eq.${post.id}`,
       }, fetchLikes)
       .subscribe()
-
     return () => {
       supabase.removeChannel(channel)
     }
   }, [post?.id])
-
+  
   // Realtime: Live-Comments
   useEffect(() => {
     if (!post?.id) return
-
     const channel = supabase
       .channel(`comments-${post.id}`)
       .on('postgres_changes', {
@@ -408,17 +409,16 @@ const fetchComments = async () => {
         filter: `post_id=eq.${post.id}`,
       }, fetchCommentCount)
       .subscribe()
-
     return () => {
       supabase.removeChannel(channel)
     }
   }, [post?.id])
-
+  
   // Handle case where post data might be undefined
   if (!post) {
     return <div className="bg-black rounded-lg overflow-hidden border border-gray-800 p-4">Invalid post data</div>
   }
-
+  
   return (
     <div className="bg-black rounded-lg overflow-hidden border border-gray-800">
       {/* User Info */}
@@ -461,7 +461,6 @@ const fetchComments = async () => {
           </button>
         )}
       </div>
-
       {/* Media */}
       <img
         src={post.media_url || '/images/placeholder.png'}
@@ -471,7 +470,6 @@ const fetchComments = async () => {
           e.currentTarget.src = '/images/placeholder.png'
         }}
       />
-
       {/* Actions */}
       <div className="p-3 space-y-2">
         <div className="flex items-center gap-4">
@@ -487,7 +485,6 @@ const fetchComments = async () => {
         <p className="text-white"><strong>{post.users?.username || 'Unbekannt'}:</strong> {post.title || 'No title'}</p>
         {post.caption && <p className="text-gray-300 text-sm">{post.caption}</p>}
       </div>
-
       {/* Kommentare */}
       {showComments && (
         <div className="p-3 border-t border-gray-800 bg-gray-900">
