@@ -16,11 +16,17 @@ interface Follower {
   users: User
 }
 
-export default function Followers({ params }: { params: { id: string } }) {
+// Typisierung für die Props der Page
+interface FollowersProps {
+  params: {
+    id: string
+  }
+}
+
+export default function Followers({ params }: FollowersProps) {
   const [followers, setFollowers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Move function declaration before useEffect
   const fetchFollowers = async () => {
     setLoading(true)
     try {
@@ -39,7 +45,7 @@ export default function Followers({ params }: { params: { id: string } }) {
       if (error) {
         console.error('Fehler beim Laden der Follower:', error)
       } else {
-        setFollowers(data.map((f: Follower) => f.users) || [])
+        setFollowers(data?.map((f: Follower) => f.users) || [])
       }
     } catch (error) {
       console.error('Exception fetching followers:', error)
@@ -62,10 +68,17 @@ export default function Followers({ params }: { params: { id: string } }) {
       ) : (
         <div className="space-y-4">
           {followers.map(user => (
-            <Link key={user.id} href={`/profile/${user.id}`} className="flex items-center gap-3 p-3 bg-gray-900 rounded hover:bg-gray-800">
-              <img src={user.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username} alt={user.username} className="w-10 h-10 rounded-full" 
-                onError={(e) => {
-                  e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username
+            <Link
+              key={user.id}
+              href={`/profile/${user.id}`}
+              className="flex items-center gap-3 p-3 bg-gray-900 rounded hover:bg-gray-800"
+            >
+              <img
+                src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
+                alt={user.username}
+                className="w-10 h-10 rounded-full"
+                onError={e => {
+                  e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
                 }}
               />
               <span>{user.username}</span>
