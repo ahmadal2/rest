@@ -16,8 +16,8 @@ export default function SignIn() {
   const [checkingConfirmation, setCheckingConfirmation] = useState(false)
   const router = useRouter()
 
-  const handleSignIn = async (e) => {
-    e.preventDefault()
+const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+     e.preventDefault()
     setLoading(true)
     setError('')
     setCheckingConfirmation(false)
