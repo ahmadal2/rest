@@ -66,7 +66,7 @@ export default function Stories() {
         console.error('Fehler bei Stories:', error.message || error)
       } else {
         // Handle the nested user data properly
-        const storiesData: Story[] = await Promise.all(data.map(async (story: any) => {
+        const storiesData: Story[] = await Promise.all(data.map(async (story: Story) => {
           let userData = story.users && story.users.length > 0 ? story.users[0] : null
           
           // If user data is missing but we have a user_id, fetch the user data

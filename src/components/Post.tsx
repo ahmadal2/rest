@@ -125,7 +125,7 @@ export default function Post({ post: initialPost }: { post: PostType }) {
       }
       
       // Handle the nested user data properly
-      const commentsData: Comment[] = data.map((comment: any) => ({
+      const commentsData: Comment[] = data.map((comment: Comment) => ({
         ...comment,
         users: comment.users && comment.users.length > 0 ? comment.users[0] : { username: 'Unknown' }
       }))

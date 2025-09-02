@@ -74,7 +74,7 @@ export default function Feed() {
       } else {
         console.log('Posts fetched:', data)
         // Handle the nested user data properly
-        const postsData: PostType[] = await Promise.all(data.map(async (post: any) => {
+        const postsData: PostType[] = await Promise.all(data.map(async (post: PostType) => {
           let userData = post.users && post.users.length > 0 ? post.users[0] : null
           
           // If user data is missing but we have a user_id, fetch the user data
