@@ -49,9 +49,18 @@ export default function ResetPassword() {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({ password })
+      // Set the token for Supabase auth
+      const { error: tokenError } = await supabase.auth.verifyOtp({
+        token,
+        type: 'recovery'
+      })
 
-      if (error) throw error
+      if (tokenError) throw tokenError
+
+      // Update the password
+      const { error: updateError } = await supabase.auth.updateUser({ password })
+
+      if (updateError) throw updateError
 
       setMessage('Password has been reset successfully. You can now sign in with your new password.')
       setTimeout(() => {

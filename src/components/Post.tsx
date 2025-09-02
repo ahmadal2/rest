@@ -5,73 +5,44 @@ import { useAuthStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
-export default function Post({ post }) {
-  const user = useAuthStore((state) => state.user)
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  email: string
+  avatar_url: string
+}
+
+interface PostType {
+  id: string
+  title: string
+  caption: string
+  media_url: string
+  user_id: string
+  created_at: string
+  users: User | null
+}
+
+interface Comment {
+  id: string
+  text: string
+  user_id: string
+  users: {
+    username: string
+  }
+}
+
+export default function Post({ post: initialPost }: { post: PostType }) {
+  const user = useAuthStore((state) => state.user) as User
+  const [post, setPost] = useState<PostType>(initialPost)
   const [liked, setLiked] = useState(false)
   const [likes, setLikes] = useState(0)
-  const [comments, setComments] = useState<any[]>([])
+  const [comments, setComments] = useState<Comment[]>([])
   const [commentCount, setCommentCount] = useState(0)
   const [newComment, setNewComment] = useState('')
   const [showComments, setShowComments] = useState(false)
 
-  useEffect(() => {
-    if (!post?.id) return
-    fetchLikes()
-    fetchComments()
-    fetchCommentCount()
-    checkIfLiked()
-  }, [post?.id, user])
-
-  // Realtime: Live-Likes
-  useEffect(() => {
-    if (!post?.id) return
-
-    const channel = supabase
-      .channel(`likes-${post.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'likes',
-        filter: `post_id=eq.${post.id}`,
-      }, fetchLikes)
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'likes',
-        filter: `post_id=eq.${post.id}`,
-      }, fetchLikes)
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [post?.id])
-
-  // Realtime: Live-Comments
-  useEffect(() => {
-    if (!post?.id) return
-
-    const channel = supabase
-      .channel(`comments-${post.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'comments',
-        filter: `post_id=eq.${post.id}`,
-      }, fetchCommentCount)
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'comments',
-        filter: `post_id=eq.${post.id}`,
-      }, fetchCommentCount)
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [post?.id])
-
+  // Move all function declarations before useEffect hooks
   const fetchLikes = async () => {
     try {
       const { count, error } = await supabase
@@ -85,8 +56,12 @@ export default function Post({ post }) {
       }
       
       setLikes(count || 0)
-    } catch (error) {
-      console.error('Exception fetching likes:', error.message || error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception fetching likes:', error.message)
+      } else {
+        console.error('Exception fetching likes:', error)
+      }
     }
   }
 
@@ -103,8 +78,12 @@ export default function Post({ post }) {
       }
       
       setCommentCount(count || 0)
-    } catch (error) {
-      console.error('Exception fetching comment count:', error.message || error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception fetching comment count:', error.message)
+      } else {
+        console.error('Exception fetching comment count:', error)
+      }
     }
   }
 
@@ -123,8 +102,71 @@ export default function Post({ post }) {
       }
       
       setLiked(!!data)
-    } catch (error) {
-      console.error('Exception checking if liked:', error.message || error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception checking if liked:', error.message)
+      } else {
+        console.error('Exception checking if liked:', error)
+      }
+    }
+  }
+
+  const fetchComments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('id, text, user_id, users(username)')
+        .eq('post_id', post.id)
+        .order('created_at', { ascending: true })
+        
+      if (error) {
+        console.error('Error fetching comments:', error.message || error)
+        return
+      }
+      
+      // Handle the nested user data properly
+      const commentsData: Comment[] = data.map((comment: any) => ({
+        ...comment,
+        users: comment.users && comment.users.length > 0 ? comment.users[0] : { username: 'Unknown' }
+      }))
+      setComments(commentsData || [])
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception fetching comments:', error.message)
+      } else {
+        console.error('Exception fetching comments:', error)
+      }
+    }
+  }
+
+  // Fetch user data if it's missing
+  const fetchUserData = async () => {
+    if (post.users) return // User data already exists
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, username, email, avatar_url')
+        .eq('id', post.user_id)
+        .single()
+        
+      if (error) {
+        console.error('Error fetching user data:', error.message || error)
+        return
+      }
+      
+      if (data) {
+        setPost(prevPost => ({
+          ...prevPost,
+          users: data
+        }))
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception fetching user data:', error.message)
+      } else {
+        console.error('Exception fetching user data:', error)
+      }
     }
   }
 
@@ -181,27 +223,12 @@ export default function Post({ post }) {
         setLikes(likes + 1)
       }
       setLiked(!liked)
-    } catch (error) {
-      console.error('Exception toggling like:', error.message || error)
-    }
-  }
-
-  const fetchComments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('comments')
-        .select('id, text, user_id, users(username)')
-        .eq('post_id', post.id)
-        .order('created_at', { ascending: true })
-        
-      if (error) {
-        console.error('Error fetching comments:', error.message || error)
-        return
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception toggling like:', error.message)
+      } else {
+        console.error('Exception toggling like:', error)
       }
-      
-      setComments(data || [])
-    } catch (error) {
-      console.error('Exception fetching comments:', error.message || error)
     }
   }
 
@@ -245,8 +272,12 @@ export default function Post({ post }) {
       setNewComment('')
       fetchComments()
       fetchCommentCount()
-    } catch (error) {
-      console.error('Exception adding comment:', error.message || error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception adding comment:', error.message)
+      } else {
+        console.error('Exception adding comment:', error)
+      }
     }
   }
 
@@ -268,8 +299,12 @@ export default function Post({ post }) {
       
       fetchComments()
       fetchCommentCount()
-    } catch (error) {
-      console.error('Exception deleting comment:', error.message || error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception deleting comment:', error.message)
+      } else {
+        console.error('Exception deleting comment:', error)
+      }
     }
   }
 
@@ -300,11 +335,74 @@ export default function Post({ post }) {
       
       // Refresh the page to reflect changes
       window.location.reload()
-    } catch (error) {
-      console.error('Exception deleting post:', error.message || error)
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Exception deleting post:', error.message)
+      } else {
+        console.error('Exception deleting post:', error)
+      }
       alert('Failed to delete post. Please try again.')
     }
   }
+
+  useEffect(() => {
+    if (!post?.id) return
+    fetchLikes()
+    fetchComments()
+    fetchCommentCount()
+    checkIfLiked()
+    fetchUserData() // Fetch user data if missing
+  }, [post?.id, user])
+
+  // Realtime: Live-Likes
+  useEffect(() => {
+    if (!post?.id) return
+
+    const channel = supabase
+      .channel(`likes-${post.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'likes',
+        filter: `post_id=eq.${post.id}`,
+      }, fetchLikes)
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'likes',
+        filter: `post_id=eq.${post.id}`,
+      }, fetchLikes)
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [post?.id])
+
+  // Realtime: Live-Comments
+  useEffect(() => {
+    if (!post?.id) return
+
+    const channel = supabase
+      .channel(`comments-${post.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${post.id}`,
+      }, fetchCommentCount)
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${post.id}`,
+      }, fetchCommentCount)
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [post?.id])
 
   // Handle case where post data might be undefined
   if (!post) {
@@ -316,7 +414,7 @@ export default function Post({ post }) {
       {/* User Info */}
       <div className="p-3 flex items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          {post.users?.id ? (
+          {post.users?.id && post.users.id !== '' ? (
             <Link href={`/profile/${post.users.id}`}>
               <img
                 src={post.users.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=profile'}
@@ -330,12 +428,14 @@ export default function Post({ post }) {
           ) : (
             <div className="w-8 h-8 rounded-full bg-gray-700"></div>
           )}
-          {post.users?.id ? (
+          {post.users?.id && post.users.id !== '' ? (
             <Link href={`/profile/${post.users.id}`} className="text-white font-medium text-sm">
               {post.users.username || 'Unknown User'}
             </Link>
           ) : (
-            <span className="text-white font-medium text-sm">Gelöschter Nutzer</span>
+            <span className="text-white font-medium text-sm">
+              {post.user_id ? 'Loading...' : 'Gelöschter Nutzer'}
+            </span>
           )}
         </div>
         

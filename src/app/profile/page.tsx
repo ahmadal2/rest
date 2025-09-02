@@ -5,10 +5,26 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  email: string
+  avatar_url: string
+  created_at: string
+}
+
+interface Post {
+  id: string
+  media_url: string
+  title: string
+  created_at: string
+}
+
 export default function Profile() {
-  const user = useAuthUser()
+  const user = useAuthUser() as User
   const loading = useAuthLoading()
-  const [posts, setPosts] = useState<any[]>([])
+  const [posts, setPosts] = useState<Post[]>([])
   const [username, setUsername] = useState('')
   const [editingUsername, setEditingUsername] = useState(false)
   const [newUsername, setNewUsername] = useState('')
@@ -17,20 +33,7 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    if (!user) return
-    setUsername(user.username || '')
-    setNewUsername(user.username || '')
-    setAvatarUrl(user.avatar_url || '')
-    fetchUserPosts()
-  }, [user])
-
-  // Fetch fresh user data when component mounts
-  useEffect(() => {
-    if (!user) return
-    fetchUserData()
-  }, [])
-
+  // Move function declarations before useEffect hooks
   const fetchUserData = async () => {
     try {
       const { data, error } = await supabase
@@ -55,17 +58,34 @@ export default function Profile() {
 
   const fetchUserPosts = async () => {
     if (!user) return
-    const { data } = await supabase
-      .from('posts')
-      .select('id, media_url, title, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-    setPosts(data || [])
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('id, media_url, title, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Error fetching user posts:', error)
+      } else {
+        setPosts(data || [])
+      }
+    } catch (error) {
+      console.error('Exception fetching user posts:', error)
+    }
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/'
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+      } else {
+        window.location.href = '/'
+      }
+    } catch (error) {
+      console.error('Exception signing out:', error)
+    }
   }
 
   const startEditingUsername = () => {
@@ -123,7 +143,8 @@ export default function Profile() {
 
     try {
       // Upload file to Supabase storage
-      const fileName = `${user.id}/avatar_${Date.now()}.${file.name.split('.').pop()}`
+      const fileExtension = file.name.split('.').pop()
+      const fileName = `${user.id}/avatar_${Date.now()}.${fileExtension}`
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, {
@@ -199,15 +220,25 @@ export default function Profile() {
       
       // Update the posts list
       setPosts(posts.filter(post => post.id !== postId))
-      setSaveMessage('Post deleted successfully!')
-      
-      // Clear message after 3 seconds
-      setTimeout(() => setSaveMessage(''), 3000)
     } catch (error) {
-      console.error('Exception deleting post:', error.message || error)
+      console.error('Exception deleting post:', error)
       alert('Failed to delete post. Please try again.')
     }
   }
+
+  useEffect(() => {
+    if (!user) return
+    setUsername(user.username || '')
+    setNewUsername(user.username || '')
+    setAvatarUrl(user.avatar_url || '')
+    fetchUserPosts()
+  }, [user])
+
+  // Fetch fresh user data when component mounts
+  useEffect(() => {
+    if (!user) return
+    fetchUserData()
+  }, [user])
 
   // Show loading state
   if (loading) {
@@ -450,7 +481,7 @@ export default function Profile() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2">No Posts Yet</h3>
-              <p className="text-gray-400 mb-6">You haven't posted anything yet. Share your first moment with the community!</p>
+              <p className="text-gray-400 mb-6">You haven&apos;t posted anything yet. Share your first moment with the community!</p>
               <Link 
                 href="/" 
                 className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-6 py-3 rounded-xl font-medium inline-flex items-center gap-2 transition-all duration-300 transform hover:scale-105"

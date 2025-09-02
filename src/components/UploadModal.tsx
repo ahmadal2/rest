@@ -5,8 +5,20 @@ import { useAuthStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { X, Image, Video } from 'lucide-react'
 
-export default function UploadModal({ onClose }) {
-  const user = useAuthStore((state) => state.user)
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  email: string
+  avatar_url: string
+}
+
+interface UploadModalProps {
+  onClose: () => void
+}
+
+export default function UploadModal({ onClose }: UploadModalProps) {
+  const user = useAuthStore((state) => state.user) as User
   const loading = useAuthStore((state) => state.loading)
   const [step, setStep] = useState<'select' | 'post'>('select')
   const [file, setFile] = useState<File | null>(null)
@@ -22,6 +34,57 @@ export default function UploadModal({ onClose }) {
       setFile(selected)
       setIsStory(story)
       setStep('post')
+    }
+  }
+
+  const ensureUserExists = async () => {
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
+    
+    try {
+      // Check if user exists in database
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, username, email, avatar_url')
+        .eq('id', user.id)
+        .single()
+      
+      if (userError || !userData) {
+        // If user doesn't exist, create them
+        const username = user.username || user.email?.split('@')[0] || 'User'
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            username: username,
+            email: user.email,
+            avatar_url: user.avatar_url || ''
+          })
+          .select()
+          .single()
+        
+        if (insertError) {
+          throw new Error('Error creating user profile: ' + insertError.message)
+        }
+        
+        // Update the store with the new user data
+        useAuthStore.getState().setUser({
+          ...user,
+          username: username,
+          avatar_url: user.avatar_url || ''
+        })
+        
+        return newUser
+      }
+      
+      // Update the store with fresh user data
+      useAuthStore.getState().setUser(userData)
+      
+      return userData
+    } catch (err) {
+      console.error('Error ensuring user exists:', err)
+      throw err
     }
   }
 
@@ -42,27 +105,8 @@ export default function UploadModal({ onClose }) {
     setUploading(true)
 
     try {
-      // Ensure user exists in database
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', user.id)
-        .single()
-      
-      if (userError) {
-        // If user doesn't exist, create them
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert({
-            id: user.id,
-            username: user.username || user.email?.split('@')[0] || 'User',
-            email: user.email
-          })
-        
-        if (insertError) {
-          throw new Error('Error creating user profile: ' + insertError.message)
-        }
-      }
+      // Ensure user exists in database and get updated user data
+      const userData = await ensureUserExists()
 
       const fileName = `${Date.now()}_${file!.name}`
       const filePath = isStory ? `stories/${fileName}` : `posts/${fileName}`
@@ -107,9 +151,15 @@ export default function UploadModal({ onClose }) {
       alert(isStory ? 'Story successfully uploaded!' : 'Post successfully uploaded!')
       onClose()
       window.location.reload()
-    } catch (err) {
-      console.error('Upload error:', err)
-      setError('Upload failed: ' + (err.message || 'Unknown error'))
+    } catch (err: unknown) {
+      // Type guard to check if error has a message property
+      if (err instanceof Error) {
+        console.error('Upload error:', err)
+        setError('Upload failed: ' + err.message)
+      } else {
+        console.error('Upload error:', err)
+        setError('Upload failed: Unknown error')
+      }
     } finally {
       setUploading(false)
     }
@@ -200,79 +250,81 @@ export default function UploadModal({ onClose }) {
         )}
 
         {step === 'post' && (
-          <div className="p-6 space-y-6">
-            {error && (
-              <div className="bg-red-900/50 text-red-200 p-3 rounded-lg border border-red-800">
-                {error}
-              </div>
-            )}
-
-            <div className="flex justify-center">
-              <div className="relative">
-                {file?.type.startsWith('image') ? (
+          <div className="p-6 space-y-4">
+            {file && (
+              <div className="aspect-video rounded-xl overflow-hidden border border-gray-600">
+                {file.type.startsWith('image') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img 
                     src={URL.createObjectURL(file)} 
                     alt="Preview" 
-                    className="max-h-80 rounded-xl object-contain border border-gray-700"
+                    className="w-full h-full object-contain"
                   />
                 ) : (
                   <video 
-                    src={URL.createObjectURL(file!)} 
-                    controls 
-                    className="max-h-80 rounded-xl object-contain border border-gray-700"
+                    src={URL.createObjectURL(file)} 
+                    className="w-full h-full object-contain"
+                    controls
                   />
                 )}
               </div>
-            </div>
-
+            )}
+            
             {!isStory && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+                <label className="block text-sm font-medium mb-1">Title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter a title..."
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  placeholder="Add a title..."
                 />
               </div>
             )}
-
+            
             {!isStory && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Caption (optional)</label>
+                <label className="block text-sm font-medium mb-1">Caption</label>
                 <textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  placeholder="Add a caption..."
                   rows={3}
-                  placeholder="What would you like to say?"
                 />
               </div>
             )}
 
-            <div className="flex space-x-3 pt-2">
+            {error && (
+              <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-red-200">
+                {error}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setStep('select')}
-                className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition-colors"
-                disabled={uploading}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
               >
                 Back
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={uploading || loading || !user}
-                className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white rounded-xl font-medium disabled:opacity-50 transition-all"
+                disabled={uploading || (!isStory && !title.trim())}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center justify-center"
               >
                 {uploading ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Uploading...
-                  </span>
-                ) : isStory ? 'Share to Story' : 'Share'}
+                  </>
+                ) : (
+                  'Post'
+                )}
               </button>
             </div>
           </div>

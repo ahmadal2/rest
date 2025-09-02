@@ -5,74 +5,140 @@ import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  email: string
+  avatar_url: string
+  created_at: string
+}
+
+interface Post {
+  id: string
+  media_url: string
+  title: string
+  created_at: string
+}
+
+interface Follow {
+  id: string
+  follower_id: string
+  following_id: string
+  created_at: string
+}
+
 export default function Profile() {
-  const user = useAuthStore((state) => state.user)
-  const [posts, setPosts] = useState<any[]>([])
+  const user = useAuthStore((state) => state.user) as User
+  const [posts, setPosts] = useState<Post[]>([])
   const [followers, setFollowers] = useState(0)
   const [following, setFollowing] = useState(0)
   const [isFollowing, setIsFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  // Move function declaration before useEffect
+  const fetchProfileData = async () => {
+    setLoading(true)
+
+    try {
+      // Posts
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select('id, media_url')
+        .eq('user_id', user.id)
+      
+      if (postsError) {
+        console.error('Error fetching posts:', postsError)
+      } else {
+        setPosts(postsData || [])
+      }
+
+      // Follower
+      const { count: followersCount, error: followersError } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact' })
+        .eq('following_id', user.id)
+      
+      if (followersError) {
+        console.error('Error fetching followers:', followersError)
+      } else {
+        setFollowers(followersCount || 0)
+      }
+
+      // Following
+      const { count: followingCount, error: followingError } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact' })
+        .eq('follower_id', user.id)
+      
+      if (followingError) {
+        console.error('Error fetching following:', followingError)
+      } else {
+        setFollowing(followingCount || 0)
+      }
+
+      // Ist der aktuelle User diesem Profil gefolgt?
+      if (user.id !== user.id) {
+        const { data, error: followError } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', user.id)
+          .single()
+        
+        if (followError && followError.code !== 'PGRST116') {
+          console.error('Error checking follow status:', followError)
+        } else {
+          setIsFollowing(!!data)
+        }
+      }
+    } catch (error) {
+      console.error('Exception fetching profile data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!user) return
     fetchProfileData()
   }, [user])
 
-  const fetchProfileData = async () => {
-    setLoading(true)
-
-    // Posts
-    const { data: postsData } = await supabase
-      .from('posts')
-      .select('id, media_url')
-      .eq('user_id', user.id)
-    setPosts(postsData || [])
-
-    // Follower
-    const { count: followersCount } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact' })
-      .eq('following_id', user.id)
-    setFollowers(followersCount || 0)
-
-    // Following
-    const { count: followingCount } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact' })
-      .eq('follower_id', user.id)
-    setFollowing(followingCount || 0)
-
-    // Ist der aktuelle User diesem Profil gefolgt?
-    if (user.id !== user.id) {
-      const {  data } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('follower_id', user.id)
-        .eq('following_id', user.id)
-        .single()
-      setIsFollowing(!!data)
-    }
-
-    setLoading(false)
-  }
-
   const handleFollow = async () => {
-    await supabase.from('follows').insert({
-      follower_id: user.id,
-      following_id: user.id,
-    })
-    setIsFollowing(true)
-    setFollowers(followers + 1)
+    try {
+      const { error } = await supabase.from('follows').insert({
+        follower_id: user.id,
+        following_id: user.id,
+      })
+      
+      if (error) {
+        console.error('Error following user:', error)
+      } else {
+        setIsFollowing(true)
+        setFollowers(followers + 1)
+      }
+    } catch (error) {
+      console.error('Exception following user:', error)
+    }
   }
 
   const handleUnfollow = async () => {
-    await supabase
-      .from('follows')
-      .delete()
-      .eq('follower_id', user.id)
-      .eq('following_id', user.id)
-    setIsFollowing(false)
-    setFollowers(followers - 1)
+    try {
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', user.id)
+        .eq('following_id', user.id)
+      
+      if (error) {
+        console.error('Error unfollowing user:', error)
+      } else {
+        setIsFollowing(false)
+        setFollowers(followers - 1)
+      }
+    } catch (error) {
+      console.error('Exception unfollowing user:', error)
+    }
   }
 
   if (loading) return <p className="text-center py-8">Lädt...</p>

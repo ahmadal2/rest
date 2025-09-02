@@ -5,34 +5,92 @@ import { useAuthStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import StoryViewer from './StoryViewer'
 
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  avatar_url: string
+}
+
+interface Story {
+  id: string
+  media_url: string
+  media_type: string
+  created_at: string
+  user_id: string
+  users: User | null
+}
+
 export default function Stories() {
-  const user = useAuthStore((state) => state.user)
-  const [stories, setStories] = useState<any[]>([])
+  const user = useAuthStore((state) => state.user) as User
+  const [stories, setStories] = useState<Story[]>([])
   const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null)
+
+  // Fetch user data for a specific user ID
+  const fetchUserData = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, username, avatar_url')
+        .eq('id', userId)
+        .single()
+        
+      if (error) {
+        console.error('Error fetching user data:', error.message || error)
+        return null
+      }
+      
+      return data
+    } catch (error) {
+      console.error('Exception fetching user data:', error)
+      return null
+    }
+  }
+
+  const fetchStories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select(`
+          id,
+          media_url,
+          media_type,
+          created_at,
+          user_id,
+          users (id, username, avatar_url)
+        `)
+        .filter('expires_at', 'gt', new Date().toISOString())
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Fehler bei Stories:', error.message || error)
+      } else {
+        // Handle the nested user data properly
+        const storiesData: Story[] = await Promise.all(data.map(async (story: any) => {
+          let userData = story.users && story.users.length > 0 ? story.users[0] : null
+          
+          // If user data is missing but we have a user_id, fetch the user data
+          if (!userData && story.user_id) {
+            userData = await fetchUserData(story.user_id)
+          }
+          
+          return {
+            ...story,
+            users: userData
+          }
+        }))
+        
+        setStories(storiesData || [])
+      }
+    } catch (error) {
+      console.error('Exception fetching stories:', error)
+    }
+  }
 
   useEffect(() => {
     if (!user) return
     fetchStories()
   }, [user])
-
-  const fetchStories = async () => {
-    const { data, error } = await supabase
-      .from('stories')
-      .select(`
-        id,
-        media_url,
-        user_id,
-        users (id, username, avatar_url)
-      `)
-      .filter('expires_at', 'gt', new Date().toISOString())
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Fehler bei Stories:', error)
-    } else {
-      setStories(data || [])
-    }
-  }
 
   // Add a function to handle story click
   const handleStoryClick = (index: number) => {
@@ -40,7 +98,10 @@ export default function Stories() {
   }
 
   const handleNavigate = (index: number) => {
-    setSelectedStoryIndex(index)
+    // Use setTimeout to avoid updating state during render
+    setTimeout(() => {
+      setSelectedStoryIndex(index)
+    }, 0)
   }
 
   return (
@@ -70,16 +131,16 @@ export default function Stories() {
           >
             <div className="w-16 h-16 border-2 border-gradient rounded-full p-0.5 bg-gradient-to-r from-yellow-400 to-pink-600">
               <img
-                src={story.users?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + story.users?.username}
+                src={story.users?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (story.users?.username || story.user_id || 'user')}
                 alt={story.users?.username || 'User'}
                 className="w-full h-full rounded-full object-cover bg-white"
                 onError={(e) => {
-                  e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + story.users?.username
+                  e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (story.users?.username || story.user_id || 'user')
                 }}
               />
             </div>
             <span className="text-xs text-white mt-1 truncate w-16 text-center">
-              {story.users?.username || 'Unknown'}
+              {story.users?.username || (story.user_id ? 'Loading...' : 'Gelöschter Nutzer')}
             </span>
           </div>
         ))}

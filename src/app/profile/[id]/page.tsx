@@ -6,24 +6,31 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  email: string
+  avatar_url: string
+  created_at: string
+}
+
+interface Post {
+  id: string
+  media_url: string
+  title: string
+  created_at: string
+}
+
 export default function Profile() {
   const currentUser = useAuthStore((state) => state.user)
-  const { id } = useParams()
-  const [profileUser, setProfileUser] = useState<any>(null)
-  const [posts, setPosts] = useState<any[]>([])
+  const { id } = useParams<{ id: string }>()
+  const [profileUser, setProfileUser] = useState<User | null>(null)
+  const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [userLoading, setUserLoading] = useState(true)
 
-  useEffect(() => {
-    if (!id) return
-    fetchUserProfile()
-  }, [id])
-
-  useEffect(() => {
-    if (!profileUser?.id) return
-    fetchUserPosts()
-  }, [profileUser?.id])
-
+  // Move function declarations before useEffect hooks
   const fetchUserProfile = async () => {
     setUserLoading(true)
     try {
@@ -51,7 +58,7 @@ export default function Profile() {
       const { data, error } = await supabase
         .from('posts')
         .select('id, media_url, title, created_at')
-        .eq('user_id', profileUser.id)
+        .eq('user_id', profileUser?.id)
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -65,6 +72,16 @@ export default function Profile() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!id) return
+    fetchUserProfile()
+  }, [id])
+
+  useEffect(() => {
+    if (!profileUser?.id) return
+    fetchUserPosts()
+  }, [profileUser?.id])
 
   if (userLoading) {
     return (
@@ -118,7 +135,7 @@ export default function Profile() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4">
           {posts.map((post) => (
             <div key={post.id} className="aspect-square rounded overflow-hidden">
-              <img src={post.media_url} alt={post.title} className="w-full h-full object-cover" />
+              <img src={post.media_url} alt={post.title || 'Post image'} className="w-full h-full object-cover" />
             </div>
           ))}
         </div>

@@ -1,8 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/lib/store'
+// No unused imports in this file
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   // The auth listener is now handled in the store

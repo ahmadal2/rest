@@ -21,8 +21,12 @@ export default function ForgotPassword() {
       })
       if (error) throw error
       setSent(true)
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError('An unknown error occurred')
+      }
     } finally {
       setLoading(false)
     }

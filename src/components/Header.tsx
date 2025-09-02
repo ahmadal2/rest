@@ -4,10 +4,17 @@ import { useState, useEffect } from 'react'
 import { useAuthUser, useAuthLoading } from '@/lib/store'
 import Link from 'next/link'
 import UploadModal from './UploadModal'
-import { supabase } from '@/lib/supabase'
+
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  email: string
+  avatar_url: string
+}
 
 export default function Header() {
-  const user = useAuthUser()
+  const user = useAuthUser() as User
   const loading = useAuthLoading()
   const [showModal, setShowModal] = useState(false)
 
