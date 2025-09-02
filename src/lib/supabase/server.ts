@@ -1,6 +1,11 @@
+// src/lib/supabase/server.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+/**
+ * Erstellt einen Supabase-Client, der im Server-Kontext läuft
+ * und automatisch die Cookies (Session) verwaltet.
+ */
 export function createServerSupabaseClient() {
   const cookieStore = cookies()
 
@@ -15,19 +20,15 @@ export function createServerSupabaseClient() {
         set(name: string, value: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value, ...options })
-          } catch (_error) {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+          } catch {
+            // Ignorieren: set() wird im Server Component Kontext geblockt
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.delete({ name, ...options })
-          } catch (_error) {
-            // The `delete` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+          } catch {
+            // Ignorieren: delete() wird im Server Component Kontext geblockt
           }
         },
       },
@@ -35,8 +36,12 @@ export function createServerSupabaseClient() {
   )
 }
 
+/**
+ * Supabase-Client mit Service Role Key.
+ * ⚠️ Nur für Server-Only Code verwenden (z. B. in API-Routen oder Server Actions).
+ * Niemals im Client einsetzen!
+ */
 export function createServiceRoleClient() {
-  // Use the service role key for admin operations
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -45,8 +50,12 @@ export function createServiceRoleClient() {
         get() {
           return null
         },
-        set() {},
-        remove() {},
+        set() {
+          // no-op
+        },
+        remove() {
+          // no-op
+        },
       },
     }
   )

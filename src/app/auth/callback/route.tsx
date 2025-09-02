@@ -13,12 +13,18 @@ export async function GET(request: NextRequest) {
   // Handle OAuth errors
   if (error) {
     console.error('OAuth error:', error, errorDescription)
-    return NextResponse.redirect(new URL(`/auth/signin?error=${encodeURIComponent(error)}&message=${encodeURIComponent(errorDescription || '')}`, request.url))
+    return NextResponse.redirect(
+      new URL(
+        `/auth/signin?error=${encodeURIComponent(error)}&message=${encodeURIComponent(errorDescription || '')}`,
+        request.url
+      )
+    )
   }
 
   if (code) {
     try {
-      const cookieStore = cookies()
+      const cookieStore = await cookies()
+
       const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -31,20 +37,14 @@ export async function GET(request: NextRequest) {
               try {
                 cookieStore.set({ name, value, ...options })
               } catch {
-
                 // The `set` method was called from a Server Component.
-                // This can be ignored if you have middleware refreshing
-                // user sessions.
               }
             },
             remove(name: string, options: CookieOptions) {
               try {
                 cookieStore.delete({ name, ...options })
               } catch {
-
                 // The `delete` method was called from a Server Component.
-                // This can be ignored if you have middleware refreshing
-                // user sessions.
               }
             },
           },
@@ -56,7 +56,9 @@ export async function GET(request: NextRequest) {
       
       if (exchangeError) {
         console.error('Error exchanging code for session:', exchangeError.message || exchangeError)
-        return NextResponse.redirect(new URL('/auth/signin?error=auth_failed&message=Failed to authenticate', request.url))
+        return NextResponse.redirect(
+          new URL('/auth/signin?error=auth_failed&message=Failed to authenticate', request.url)
+        )
       }
       
       // Get user data from the session
@@ -65,7 +67,6 @@ export async function GET(request: NextRequest) {
       
       if (user) {
         try {
-          // Check if user profile already exists
           const serverSupabase = createServerSupabaseClient()
           const { data: existingUser, error: fetchError } = await serverSupabase
             .from('users')
@@ -75,9 +76,12 @@ export async function GET(request: NextRequest) {
           
           console.log('Existing user check:', { existingUser, fetchError })
           
-          // If user profile doesn't exist, create it
           if (!existingUser && !fetchError) {
-            const username = user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.substring(0, 8)}`
+            const username =
+              user.user_metadata?.username ||
+              user.email?.split('@')[0] ||
+              `user_${user.id.substring(0, 8)}`
+
             console.log('Creating new user profile:', { id: user.id, email: user.email, username })
             
             const { error: insertError } = await serverSupabase.from('users').insert({
@@ -99,7 +103,6 @@ export async function GET(request: NextRequest) {
           }
         } catch (profileError: unknown) {
           console.error('Exception handling user profile:', profileError)
-          // Type guard to check if error has a message property
           if (profileError instanceof Error) {
             console.error('Exception handling user profile:', profileError.message)
           }
@@ -107,15 +110,15 @@ export async function GET(request: NextRequest) {
       }
     } catch (exchangeError: unknown) {
       console.error('Exception exchanging code for session:', exchangeError)
-      // Type guard to check if error has a message property
       if (exchangeError instanceof Error) {
         console.error('Exception exchanging code for session:', exchangeError.message)
       }
-      return NextResponse.redirect(new URL('/auth/signin?error=auth_failed&message=Authentication failed', request.url))
+      return NextResponse.redirect(
+        new URL('/auth/signin?error=auth_failed&message=Authentication failed', request.url)
+      )
     }
   }
 
-  // Redirect to home page after successful authentication
   console.log('Redirecting to home page')
   return NextResponse.redirect(new URL('/', request.url))
 }
