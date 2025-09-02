@@ -1,10 +1,11 @@
+// src/app/profile/[id]/followers/page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
-// Define types for our data
+// Typen für User und Follower
 interface User {
   id: string
   username: string
@@ -16,14 +17,14 @@ interface Follower {
   users: User
 }
 
-// Typisierung für die Props der Page
-interface FollowersProps {
+// Props-Typ für Next.js App-Router-Seiten
+interface FollowersPageProps {
   params: {
     id: string
   }
 }
 
-export default function Followers({ params }: FollowersProps) {
+export default function Followers({ params }: FollowersPageProps) {
   const [followers, setFollowers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -45,7 +46,7 @@ export default function Followers({ params }: FollowersProps) {
       if (error) {
         console.error('Fehler beim Laden der Follower:', error)
       } else {
-        setFollowers(data?.map((f: Follower) => f.users) || [])
+        setFollowers(data.map((f: Follower) => f.users) || [])
       }
     } catch (error) {
       console.error('Exception fetching followers:', error)
@@ -68,11 +69,7 @@ export default function Followers({ params }: FollowersProps) {
       ) : (
         <div className="space-y-4">
           {followers.map(user => (
-            <Link
-              key={user.id}
-              href={`/profile/${user.id}`}
-              className="flex items-center gap-3 p-3 bg-gray-900 rounded hover:bg-gray-800"
-            >
+            <Link key={user.id} href={`/profile/${user.id}`} className="flex items-center gap-3 p-3 bg-gray-900 rounded hover:bg-gray-800">
               <img
                 src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                 alt={user.username}
