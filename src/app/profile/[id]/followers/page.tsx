@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
+import { useParams } from 'next/navigation'
 
 interface User {
   id: string
@@ -16,7 +17,8 @@ interface Follower {
 }
 
 // Page-Funktion direkt mit Typen für params
-export default function FollowersPage({ params }: { params: { id: string } }) {
+export default function FollowersPage() {
+  const { id } = useParams<{ id: string }>()
   const [followers, setFollowers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -33,7 +35,7 @@ export default function FollowersPage({ params }: { params: { id: string } }) {
             avatar_url
           )
         `)
-        .eq('following_id', params.id)
+        .eq('following_id', id)
 
       if (error) console.error(error)
       else setFollowers(data?.map((f: Follower) => f.users) || [])
@@ -45,8 +47,10 @@ export default function FollowersPage({ params }: { params: { id: string } }) {
   }
 
   useEffect(() => {
-    fetchFollowers()
-  }, [params.id])
+    if (id) {
+      fetchFollowers()
+    }
+  }, [id])
 
   if (loading) return <p>Lädt...</p>
 
