@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
-// Typen für User und Follower
 interface User {
   id: string
   username: string
@@ -17,7 +16,7 @@ interface Follower {
   users: User
 }
 
-// Props-Typ für Next.js App-Router-Seiten
+// Next.js App-Router Typ für Page Props
 interface FollowersPageProps {
   params: {
     id: string
@@ -43,13 +42,10 @@ export default function Followers({ params }: FollowersPageProps) {
         `)
         .eq('following_id', params.id)
 
-      if (error) {
-        console.error('Fehler beim Laden der Follower:', error)
-      } else {
-        setFollowers(data.map((f: Follower) => f.users) || [])
-      }
+      if (error) console.error(error)
+      else setFollowers(data.map((f: Follower) => f.users) || [])
     } catch (error) {
-      console.error('Exception fetching followers:', error)
+      console.error(error)
     } finally {
       setLoading(false)
     }
@@ -74,9 +70,7 @@ export default function Followers({ params }: FollowersPageProps) {
                 src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
                 alt={user.username}
                 className="w-10 h-10 rounded-full"
-                onError={e => {
-                  e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
-                }}
+                onError={e => { e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}` }}
               />
               <span>{user.username}</span>
             </Link>
