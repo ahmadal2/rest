@@ -1,10 +1,10 @@
-// src/app/profile/[id]/followers/page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
+// Typdefinitionen
 interface User {
   id: string
   username: string
@@ -16,11 +16,10 @@ interface Follower {
   users: User
 }
 
-// PageProps-konforme Typisierung
+// Korrekte Typisierung für Next.js PageProps
 interface FollowersPageProps {
-  params: {
-    id: string
-  }
+  params: { id: string }
+  searchParams?: { [key: string]: string | string[] }
 }
 
 export default function Followers({ params }: FollowersPageProps) {
@@ -42,10 +41,13 @@ export default function Followers({ params }: FollowersPageProps) {
         `)
         .eq('following_id', params.id)
 
-      if (error) console.error(error)
-      else setFollowers(data.map((f: Follower) => f.users) || [])
+      if (error) {
+        console.error('Fehler beim Laden der Follower:', error)
+      } else {
+        setFollowers(data?.map((f: Follower) => f.users) || [])
+      }
     } catch (error) {
-      console.error(error)
+      console.error('Exception fetching followers:', error)
     } finally {
       setLoading(false)
     }
@@ -65,12 +67,18 @@ export default function Followers({ params }: FollowersPageProps) {
       ) : (
         <div className="space-y-4">
           {followers.map(user => (
-            <Link key={user.id} href={`/profile/${user.id}`} className="flex items-center gap-3 p-3 bg-gray-900 rounded hover:bg-gray-800">
+            <Link
+              key={user.id}
+              href={`/profile/${user.id}`}
+              className="flex items-center gap-3 p-3 bg-gray-900 rounded hover:bg-gray-800"
+            >
               <img
-                src={user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`}
+                src={user.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username}
                 alt={user.username}
                 className="w-10 h-10 rounded-full"
-                onError={e => { e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}` }}
+                onError={(e) => {
+                  e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username
+                }}
               />
               <span>{user.username}</span>
             </Link>
