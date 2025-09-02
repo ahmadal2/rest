@@ -16,7 +16,7 @@ interface Follower {
   users: User
 }
 
-// Next.js App-Router Typ für Page Props
+// PageProps-konforme Typisierung
 interface FollowersPageProps {
   params: {
     id: string
