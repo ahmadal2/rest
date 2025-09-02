@@ -22,7 +22,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()((set, get) => {
   // Initialize loading state
   set({ loading: true, user: null })
-
+  
   // Function to fetch user data
   const fetchUserData = async (userId: string) => {
     try {
@@ -31,19 +31,17 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         .select('id, username, email, avatar_url, created_at')
         .eq('id', userId)
         .single()
-
       if (error) {
         console.error('Error fetching user data:', error)
         return null
       }
-
       return data
     } catch (error) {
       console.error('Exception fetching user data:', error)
       return null
     }
   }
-
+  
   // Check for existing session
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (session?.user) {
@@ -52,7 +50,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         user: userData || { 
           id: session.user.id, 
           username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'User', 
-          email: session.user.email 
+          email: session.user.email || '' // Fix: Leerer String als Standardwert
         },
         loading: false
       })
@@ -60,7 +58,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       set({ user: null, loading: false })
     }
   })
-
+  
   // Auth state change listener
   const { data: { subscription: _subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {
@@ -69,7 +67,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
           user: userData || { 
             id: session.user.id, 
             username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'User', 
-            email: session.user.email 
+            email: session.user.email || '' // Fix: Leerer String als Standardwert
           },
           loading: false
         })
@@ -78,7 +76,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       set({ user: null, loading: false })
     }
   })
-
+  
   return {
     user: null,
     loading: true,
