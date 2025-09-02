@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
               try {
                 cookieStore.set({ name, value, ...options })
               } catch {
+
                 // The `set` method was called from a Server Component.
                 // This can be ignored if you have middleware refreshing
                 // user sessions.
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
               try {
                 cookieStore.delete({ name, ...options })
               } catch {
+
                 // The `delete` method was called from a Server Component.
                 // This can be ignored if you have middleware refreshing
                 // user sessions.
