@@ -26,42 +26,7 @@ interface Story {
 export default function Home() {
   const user = useAuthUser()
   const loading = useAuthLoading()
-  const [stories, setStories] = useState<Story[]>([])
-  const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null)
-
-  // Add debugging to see what's happening with auth state
-  useEffect(() => {
-    console.log('Home page auth state:', { user, loading })
-  }, [user, loading])
-
-  // Fetch stories
-  useEffect(() => {
-    const fetchStories = async () => {
-      try {
-        const response = await fetch('/api/stories')
-        if (response.ok) {
-          const data = await response.json()
-          setStories(data)
-        }
-      } catch (error) {
-        console.error('Error fetching stories:', error)
-      }
-    }
-    
-    if (user) {
-      fetchStories()
-    }
-  }, [user])
-
-  // Handle story navigation
-  const handleStoryNavigate = (index: number) => {
-    setSelectedStoryIndex(index)
-  }
   
-  const handleCloseStoryViewer = () => {
-    setSelectedStoryIndex(null)
-  }
-
   // Show loading state while checking auth
   if (loading) {
     return (
@@ -80,20 +45,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
       <Header />
+      
+      {/* Stories section - always visible */}
+      <div className="max-w-6xl mx-auto">
+        <Stories />
+      </div>
+      
+      {/* Main content - changes based on auth state */}
       {user ? (
         <div className="max-w-6xl mx-auto">
-          {/* Stories component with required props */}
-          <Stories 
-            stories={stories}
-            currentIndex={selectedStoryIndex !== null ? selectedStoryIndex : 0}
-            onClose={handleCloseStoryViewer}
-            onNavigate={handleStoryNavigate}
-            storyId={selectedStoryIndex !== null && stories[selectedStoryIndex] ? stories[selectedStoryIndex].id : ''}
-          />
           <Feed />
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
+        <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 py-12">
           <div className="max-w-2xl w-full bg-gray-800/50 backdrop-blur-lg rounded-3xl p-8 md:p-12 border border-gray-700 shadow-2xl text-center">
             <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8">
               <img 
