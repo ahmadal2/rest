@@ -568,6 +568,9 @@ function App() {
     }
   ])
 
+  const [loginAttempts, setLoginAttempts] = useState(0)
+  const [lastAttemptTime, setLastAttemptTime] = useState(0)
+
   // Initialisierung
   useEffect(() => {
     // Lade gespeicherte Daten
@@ -743,16 +746,34 @@ function App() {
   }
 
   const login = (email: string, password: string): boolean => {
+    // Implement rate limiting to prevent brute force attacks
+    const currentTime = Date.now()
+    const timeSinceLastAttempt = currentTime - lastAttemptTime
+    
+    // If there have been 3 failed attempts and less than 30 seconds have passed, reject the attempt
+    if (loginAttempts >= 3 && timeSinceLastAttempt < 30000) {
+      console.log('Too many login attempts. Please wait before trying again.')
+      return false
+    }
+    
     // Suche nach Admin in allen Admins (Haupt- und Secondary)
     const admin = admins.find(a => a.email === email && a.password === password)
     if (admin) {
+      // Reset login attempts on successful login
+      setLoginAttempts(0)
+      setLastAttemptTime(0)
+      
       setIsAuthenticated(true)
       setCurrentAdmin(admin)
       // Speichere Authentifizierungsdaten in localStorage
       localStorage.setItem('restaurant_auth', JSON.stringify(admin))
       return true
+    } else {
+      // Increment login attempts on failed login
+      setLoginAttempts(prev => prev + 1)
+      setLastAttemptTime(currentTime)
+      return false
     }
-    return false
   }
 
   const logout = () => {

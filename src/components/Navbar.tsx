@@ -40,6 +40,9 @@ const Navbar: React.FC = () => {
   const [showParticles, setShowParticles] = useState(false)
   const [textColorClass, setTextColorClass] = useState('text-white')
   const [textColor, setTextColor] = useState('white')
+  const [loginAttempts, setLoginAttempts] = useState(0)
+  const [lastAttemptTime, setLastAttemptTime] = useState(0)
+  const [showLoginError, setShowLoginError] = useState(false)
 
   const { register: registerLogin, handleSubmit: handleLoginSubmit, reset: resetLogin, formState: { errors: loginErrors } } = useForm()
   const { register: registerAdmin, handleSubmit: handleAdminSubmit, reset: resetAdmin, formState: { errors: adminErrors } } = useForm()
@@ -52,6 +55,23 @@ const Navbar: React.FC = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Handle key combination for admin login (Ctrl+Shift+L)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if Ctrl+Shift+L is pressed
+      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+        e.preventDefault()
+        // Only show login if not already authenticated
+        if (!isAuthenticated) {
+          setIsLoginModalOpen(true)
+        }
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isAuthenticated])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -91,13 +111,36 @@ const Navbar: React.FC = () => {
   ]
 
   const onLoginSubmit = (data: any) => {
+    // Check if rate limiting is active
+    const currentTime = Date.now()
+    const timeSinceLastAttempt = currentTime - lastAttemptTime
+    
+    // If there have been 3 failed attempts and less than 30 seconds have passed, reject the attempt
+    if (loginAttempts >= 3 && timeSinceLastAttempt < 30000) {
+      toast.error('Zu viele Anmeldeversuche. Bitte warten Sie 30 Sekunden.')
+      return
+    }
+    
     if (login(data.email, data.password)) {
       toast.success('Erfolgreich angemeldet!')
       setIsLoginModalOpen(false)
       resetLogin()
       setShowParticles(true)
+      // Reset login attempts on successful login
+      setLoginAttempts(0)
+      setLastAttemptTime(0)
+      setShowLoginError(false)
     } else {
+      // Increment login attempts on failed login
+      setLoginAttempts(prev => prev + 1)
+      setLastAttemptTime(currentTime)
+      setShowLoginError(true)
       toast.error('Ungültige Anmeldedaten')
+      
+      // Show rate limiting message after 3 failed attempts
+      if (loginAttempts >= 2) {
+        toast.error('Zu viele fehlgeschlagene Versuche. Bitte warten Sie 30 Sekunden.')
+      }
     }
   }
 
@@ -544,7 +587,7 @@ const Navbar: React.FC = () => {
                 </motion.button>
               )}
 
-              {/* Admin Panel */}
+              {/* Admin Panel - Hidden by default, accessible via key combination */}
               {isAuthenticated ? (
                 <div className="relative group">
                   <motion.button
@@ -631,17 +674,20 @@ const Navbar: React.FC = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all duration-500 border border-white/20"
-                >
-                  <span className="flex items-center space-x-2">
-                    <Zap size={16} />
-                    <span>Admin Login</span>
-                  </span>
-                </motion.button>
+                // Hidden admin login button - only visible when Ctrl+Shift+L is pressed
+                <div className="hidden">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsLoginModalOpen(true)}
+                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all duration-500 border border-white/20"
+                  >
+                    <span className="flex items-center space-x-2">
+                      <Zap size={16} />
+                      <span>Admin Login</span>
+                    </span>
+                  </motion.button>
+                </div>
               )}
 
               {/* Mobile Menu */}
@@ -805,6 +851,13 @@ const Navbar: React.FC = () => {
                   </motion.button>
                 </div>
                 
+                {/* Note about key combination */}
+                <div className="bg-blue-900/30 border border-blue-700 rounded-xl p-3 mb-6">
+                  <p className="text-blue-300 text-sm">
+                    Tipp: Drücken Sie Strg+Umschalt+L, um jederzeit auf das Admin-Login zuzugreifen.
+                  </p>
+                </div>
+                
                 <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-6">
                   <div>
                     <label className="block text-sm font-bold text-white mb-3">Admin E-Mail</label>
@@ -832,6 +885,24 @@ const Navbar: React.FC = () => {
                     )}
                   </div>
                   
+                  {/* Show login attempts counter */}
+                  {loginAttempts > 0 && loginAttempts < 3 && (
+                    <div className="bg-amber-900/30 border border-amber-700 rounded-xl p-3">
+                      <p className="text-amber-300 text-sm">
+                        Fehlgeschlagene Versuche: {loginAttempts}/3
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Show error message for too many login attempts */}
+                  {loginAttempts >= 3 && (
+                    <div className="bg-red-900/50 border border-red-700 rounded-xl p-3">
+                      <p className="text-red-300 text-sm">
+                        Zu viele fehlgeschlagene Anmeldeversuche. Bitte warten Sie 30 Sekunden vor dem nächsten Versuch.
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="flex space-x-4 pt-4">
                     <button
                       type="button"
@@ -840,7 +911,13 @@ const Navbar: React.FC = () => {
                     >
                       Abbrechen
                     </button>
-                    <button type="submit" className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-4 rounded-xl font-bold hover:shadow-2xl transition-all duration-500 flex items-center justify-center space-x-2">
+                    <button 
+                      type="submit" 
+                      disabled={loginAttempts >= 3 && Date.now() - lastAttemptTime < 30000}
+                      className={`flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-4 rounded-xl font-bold hover:shadow-2xl transition-all duration-500 flex items-center justify-center space-x-2 ${
+                        loginAttempts >= 3 && Date.now() - lastAttemptTime < 30000 ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
                       <Zap size={16} />
                       <span>Anmelden</span>
                     </button>
