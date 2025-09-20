@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Trash2, Pause, Play, Volume2, VolumeX, Share } from 'lucide-react'
+import { useAuthStore } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
 
 // Define types for our data
 interface User {
@@ -33,10 +35,12 @@ export default function StoryViewer({
   onClose, 
   onNavigate 
 }: StoryViewerProps) {
+  const user = useAuthStore((state) => state.user) as User
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [isVideo, setIsVideo] = useState(false)
   const [videoLoading, setVideoLoading] = useState(true)
+  const [isMuted, setIsMuted] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   
@@ -108,12 +112,20 @@ export default function StoryViewer({
       }
     }
     
+    const handleTimeUpdate = () => {
+      if (video.duration) {
+        setProgress((video.currentTime / video.duration) * 100)
+      }
+    }
+    
     video.addEventListener('loadeddata', handleVideoLoaded)
     video.addEventListener('ended', handleVideoEnd)
+    video.addEventListener('timeupdate', handleTimeUpdate)
     
     return () => {
       video.removeEventListener('loadeddata', handleVideoLoaded)
       video.removeEventListener('ended', handleVideoEnd)
+      video.removeEventListener('timeupdate', handleTimeUpdate)
     }
   }, [isVideo, currentIndex, stories.length, onNavigate, onClose, isPaused])
   
@@ -130,6 +142,10 @@ export default function StoryViewer({
         if (currentIndex > 0) {
           onNavigate(currentIndex - 1)
         }
+      } else if (e.key === ' ') {
+        // Spacebar to pause/resume
+        e.preventDefault()
+        togglePause()
       }
     }
     
@@ -165,18 +181,85 @@ export default function StoryViewer({
     }
   }
   
-  // Pause on hover/touch
-  const handleMouseEnter = () => {
-    setIsPaused(true)
+  // Toggle pause/play
+  const togglePause = () => {
+    setIsPaused(!isPaused)
+    
     if (isVideo && videoRef.current) {
-      videoRef.current.pause()
+      if (isPaused) {
+        videoRef.current.play().catch(e => console.error('Error playing video:', e))
+      } else {
+        videoRef.current.pause()
+      }
+    }
+    
+    if (isPaused) {
+      // Restart progress if it was completed
+      if (progress >= 100) {
+        setProgress(0)
+      }
     }
   }
   
-  const handleMouseLeave = () => {
-    setIsPaused(false)
+  // Toggle mute/unmute
+  const toggleMute = () => {
+    setIsMuted(!isMuted)
+    
     if (isVideo && videoRef.current) {
-      videoRef.current.play().catch(e => console.error('Error playing video:', e))
+      videoRef.current.muted = !isMuted
+    }
+  }
+  
+  // Delete story function
+  const deleteStory = async () => {
+    if (!user || !currentStory || currentStory.user_id !== user.id) return
+    
+    const confirmed = window.confirm('Are you sure you want to delete this story? This action cannot be undone.')
+    if (!confirmed) return
+    
+    try {
+      const { error } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', currentStory.id)
+        .eq('user_id', user.id)
+      
+      if (error) {
+        console.error('Error deleting story:', error.message || error)
+        alert('Failed to delete story. Please try again.')
+        return
+      }
+      
+      // Navigate to next or previous story, or close if none left
+      if (currentIndex < stories.length - 1) {
+        onNavigate(currentIndex + 1)
+      } else if (currentIndex > 0) {
+        onNavigate(currentIndex - 1)
+      } else {
+        onClose()
+      }
+    } catch (error) {
+      console.error('Exception deleting story:', error)
+      alert('Failed to delete story. Please try again.')
+    }
+  }
+  
+  // Share story function
+  const shareStory = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${currentStory.users?.username || 'User'}'s Story`,
+          text: 'Check out this story!',
+          url: window.location.href,
+        })
+      } catch (error) {
+        console.error('Error sharing:', error)
+      }
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(window.location.href)
+      alert('Link copied to clipboard!')
     }
   }
   
@@ -187,42 +270,10 @@ export default function StoryViewer({
   return (
     <div 
       className="fixed inset-0 bg-black z-50 flex items-center justify-center"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Close button */}
-      <button 
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
-        aria-label="Close story"
-      >
-        <X className="h-6 w-6" />
-      </button>
-      
-      {/* Navigation buttons */}
-      {currentIndex > 0 && (
-        <button 
-          onClick={() => onNavigate(currentIndex - 1)}
-          className="absolute left-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
-          aria-label="Previous story"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-      )}
-      
-      {currentIndex < stories.length - 1 && (
-        <button 
-          onClick={() => onNavigate(currentIndex + 1)}
-          className="absolute right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
-          aria-label="Next story"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </button>
-      )}
-      
       {/* Progress indicators */}
       <div className="absolute top-4 left-0 right-0 flex justify-center space-x-1 px-4 z-10">
         {stories.map((_, index) => (
@@ -242,22 +293,84 @@ export default function StoryViewer({
       </div>
       
       {/* User info */}
-      <div className="absolute top-16 left-4 right-4 z-10 flex items-center">
-        <img
-          src={currentStory.users?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (currentStory.users?.username || currentStory.user_id)}
-          alt={currentStory.users?.username || 'User'}
-          className="w-10 h-10 rounded-full border-2 border-white"
-        />
-        <div className="ml-3">
-          <p className="text-white font-semibold">{currentStory.users?.username || 'Unknown User'}</p>
-          <p className="text-gray-300 text-xs">
-            {new Date(currentStory.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
+      <div className="absolute top-16 left-4 right-4 z-10 flex items-center justify-between">
+        <div className="flex items-center">
+          <img
+            src={currentStory.users?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (currentStory.users?.username || currentStory.user_id)}
+            alt={currentStory.users?.username || 'User'}
+            className="w-10 h-10 rounded-full border-2 border-white"
+          />
+          <div className="ml-3">
+            <p className="text-white font-semibold">{currentStory.users?.username || 'Unknown User'}</p>
+            <p className="text-gray-300 text-xs">
+              {new Date(currentStory.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex space-x-2">
+          {isVideo && (
+            <button 
+              onClick={toggleMute}
+              className="text-white bg-black bg-opacity-50 rounded-full p-2"
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            </button>
+          )}
+          
+          <button 
+            onClick={shareStory}
+            className="text-white bg-black bg-opacity-50 rounded-full p-2"
+            aria-label="Share story"
+          >
+            <Share className="h-5 w-5" />
+          </button>
+          
+          {user && currentStory.user_id === user.id && (
+            <button 
+              onClick={deleteStory}
+              className="text-white bg-black bg-opacity-50 rounded-full p-2"
+              aria-label="Delete story"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )}
+          
+          <button 
+            onClick={onClose}
+            className="text-white bg-black bg-opacity-50 rounded-full p-2"
+            aria-label="Close story"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
       </div>
       
+      {/* Navigation buttons */}
+      {currentIndex > 0 && (
+        <button 
+          onClick={() => onNavigate(currentIndex - 1)}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
+          aria-label="Previous story"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
+      
+      {currentIndex < stories.length - 1 && (
+        <button 
+          onClick={() => onNavigate(currentIndex + 1)}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
+          aria-label="Next story"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
+      
       {/* Story content */}
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center" onClick={togglePause}>
         {isVideo ? (
           <>
             <video
@@ -265,7 +378,7 @@ export default function StoryViewer({
               src={currentStory.media_url}
               className="max-h-full max-w-full object-contain"
               playsInline
-              muted
+              muted={isMuted}
               loop={false}
               onLoadedData={() => setVideoLoading(false)}
             />
@@ -281,6 +394,15 @@ export default function StoryViewer({
             alt="Story"
             className="max-h-full max-w-full object-contain"
           />
+        )}
+        
+        {/* Pause/Play indicator */}
+        {isPaused && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-black bg-opacity-50 rounded-full p-4">
+              {isPaused ? <Play className="h-8 w-8 text-white" /> : <Pause className="h-8 w-8 text-white" />}
+            </div>
+          </div>
         )}
       </div>
     </div>
