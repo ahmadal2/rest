@@ -1,20 +1,66 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthUser, useAuthLoading } from '@/lib/store'
 import Header from '@/components/Header'
 import Stories from '@/components/Stories'
 import Feed from '@/components/Feed'
 import Link from 'next/link'
 
+// Define types for our data
+interface User {
+  id: string
+  username: string
+  avatar_url: string
+}
+
+interface Story {
+  id: string
+  media_url: string
+  media_type: string
+  created_at: string
+  user_id: string
+  users: User | null
+}
+
 export default function Home() {
   const user = useAuthUser()
   const loading = useAuthLoading()
+  const [stories, setStories] = useState<Story[]>([])
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null)
 
   // Add debugging to see what's happening with auth state
   useEffect(() => {
     console.log('Home page auth state:', { user, loading })
   }, [user, loading])
+
+  // Fetch stories
+  useEffect(() => {
+    const fetchStories = async () => {
+      try {
+        const response = await fetch('/api/stories')
+        if (response.ok) {
+          const data = await response.json()
+          setStories(data)
+        }
+      } catch (error) {
+        console.error('Error fetching stories:', error)
+      }
+    }
+    
+    if (user) {
+      fetchStories()
+    }
+  }, [user])
+
+  // Handle story navigation
+  const handleStoryNavigate = (index: number) => {
+    setSelectedStoryIndex(index)
+  }
+  
+  const handleCloseStoryViewer = () => {
+    setSelectedStoryIndex(null)
+  }
 
   // Show loading state while checking auth
   if (loading) {
@@ -36,7 +82,14 @@ export default function Home() {
       <Header />
       {user ? (
         <div className="max-w-6xl mx-auto">
-          <Stories />
+          {/* Stories component with required props */}
+          <Stories 
+            stories={stories}
+            currentIndex={selectedStoryIndex !== null ? selectedStoryIndex : 0}
+            onClose={handleCloseStoryViewer}
+            onNavigate={handleStoryNavigate}
+            storyId={selectedStoryIndex !== null && stories[selectedStoryIndex] ? stories[selectedStoryIndex].id : ''}
+          />
           <Feed />
         </div>
       ) : (
