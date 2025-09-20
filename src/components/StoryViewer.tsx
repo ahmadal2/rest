@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { X, ChevronLeft, ChevronRight, Trash2, Pause, Play } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import { useAuthStore } from '@/lib/store'
 
 // Define types for our data
@@ -34,11 +34,8 @@ export default function StoryViewer({ storyId, stories, currentIndex, onClose, o
   const [story, setStory] = useState<Story | null>(null)
   const [loading, setLoading] = useState(true)
   const [progress, setProgress] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-  const [videoLoading, setVideoLoading] = useState(true)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   // Fetch user data if it's missing
   const fetchUserData = async (userId: string) => {
@@ -162,106 +159,11 @@ export default function StoryViewer({ storyId, stories, currentIndex, onClose, o
     }
   }, [storyId])
 
-  // Handle video playback
   useEffect(() => {
     if (story && story.media_type === 'video' && videoRef.current) {
-      const video = videoRef.current
-      
-      const handleVideoLoaded = () => {
-        setVideoLoading(false)
-        if (!isPaused) {
-          video.play().catch(e => console.error('Error playing video:', e))
-        }
-      }
-      
-      const handleVideoEnd = () => {
-        // Auto-navigate to next story when video ends
-        if (currentIndex < stories.length - 1) {
-          onNavigate(currentIndex + 1)
-        } else {
-          onClose()
-        }
-      }
-      
-      video.addEventListener('loadeddata', handleVideoLoaded)
-      video.addEventListener('ended', handleVideoEnd)
-      
-      return () => {
-        video.removeEventListener('loadeddata', handleVideoLoaded)
-        video.removeEventListener('ended', handleVideoEnd)
-      }
+      videoRef.current.play()
     }
-  }, [story, isPaused, currentIndex, stories.length, onNavigate, onClose])
-
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      } else if (e.key === 'ArrowRight') {
-        if (currentIndex < stories.length - 1) {
-          onNavigate(currentIndex + 1)
-        }
-      } else if (e.key === 'ArrowLeft') {
-        if (currentIndex > 0) {
-          onNavigate(currentIndex - 1)
-        }
-      } else if (e.key === ' ') {
-        // Spacebar to pause/resume
-        e.preventDefault()
-        togglePause()
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [currentIndex, stories.length, onNavigate, onClose])
-
-  // Handle touch events for mobile swipe navigation
-  const [touchStart, setTouchStart] = useState(0)
-  const [touchEnd, setTouchEnd] = useState(0)
-  
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX)
-  }
-  
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-  }
-  
-  const handleTouchEnd = () => {
-    if (touchStart - touchEnd > 75) {
-      // Swipe left
-      if (currentIndex < stories.length - 1) {
-        onNavigate(currentIndex + 1)
-      }
-    } else if (touchEnd - touchStart > 75) {
-      // Swipe right
-      if (currentIndex > 0) {
-        onNavigate(currentIndex - 1)
-      }
-    }
-  }
-
-  const togglePause = () => {
-    setIsPaused(!isPaused)
-    
-    if (story && story.media_type === 'video' && videoRef.current) {
-      if (isPaused) {
-        videoRef.current.play().catch(e => console.error('Error playing video:', e))
-      } else {
-        videoRef.current.pause()
-      }
-    }
-    
-    if (isPaused) {
-      startProgress()
-    } else if (progressInterval.current) {
-      clearInterval(progressInterval.current)
-    }
-  }
+  }, [story])
 
   const handlePrev = () => {
     if (onNavigate && currentIndex > 0) {
@@ -277,6 +179,11 @@ export default function StoryViewer({ storyId, stories, currentIndex, onClose, o
     } else {
       onClose()
     }
+  }
+
+  const handleRestart = () => {
+    setProgress(0)
+    startProgress()
   }
 
   // Add delete story functionality
@@ -330,53 +237,38 @@ export default function StoryViewer({ storyId, stories, currentIndex, onClose, o
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className="fixed inset-0 bg-black flex items-center justify-center z-50"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
       {/* Progress bars */}
       <div className="absolute top-4 left-4 right-4 flex gap-1 z-10">
         {stories.map((_, index) => (
           <div key={index} className="flex-1 h-1 bg-gray-600 rounded-full overflow-hidden">
             <div 
-              className={`h-full ${index === currentIndex ? 'bg-white' : 'bg-gray-600'}`}
-              style={{ 
-                width: index < currentIndex ? '100%' : index === currentIndex ? `${progress}%` : '0%',
-                transition: index === currentIndex ? 'width 0.05s linear' : 'none'
-              }}
+              className="h-full bg-white transition-all duration-100"
+              style={{ width: index < currentIndex ? '100%' : index === currentIndex ? `${progress}%` : '0%' }}
             />
           </div>
         ))}
       </div>
 
       {/* User info */}
-      <div className="absolute top-16 left-4 right-4 z-10 flex items-center">
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-2">
         <img
           src={story.users?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (story.users?.username || story.user_id || 'user')}
           alt={story.users?.username || 'User'}
-          className="w-10 h-10 rounded-full border-2 border-white"
+          className="w-8 h-8 rounded-full border-2 border-white"
           onError={(e) => {
             e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (story.users?.username || story.user_id || 'user')
           }}
         />
-        <div className="ml-3">
-          <p className="text-white font-semibold">{story.users?.username || 'Unknown User'}</p>
-          <p className="text-gray-300 text-xs">
-            {new Date(story.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
-        </div>
+        <span className="text-white font-medium">
+          {story.users?.username || (story.user_id ? 'Loading...' : 'Gelöschter Nutzer')}
+        </span>
       </div>
 
       {/* Close button */}
       <button 
         onClick={onClose}
-        className="absolute top-4 right-4 text-white z-10 bg-black/50 rounded-full p-2"
-        aria-label="Close story"
+        className="absolute top-4 right-4 text-white z-10 bg-black/50 rounded-full p-1"
       >
         <X size={24} />
       </button>
@@ -385,40 +277,9 @@ export default function StoryViewer({ storyId, stories, currentIndex, onClose, o
       {user && story.user_id === user.id && (
         <button 
           onClick={deleteStory}
-          className="absolute top-4 left-4 text-white z-10 bg-black/50 rounded-full p-2"
-          aria-label="Delete story"
+          className="absolute top-4 left-4 text-white z-10 bg-black/50 rounded-full p-1"
         >
           <Trash2 size={24} />
-        </button>
-      )}
-      
-      {/* Pause/Play button */}
-      <button 
-        onClick={togglePause}
-        className="absolute top-16 right-4 text-white z-10 bg-black/50 rounded-full p-2"
-        aria-label={isPaused ? "Play story" : "Pause story"}
-      >
-        {isPaused ? <Play size={24} /> : <Pause size={24} />}
-      </button>
-      
-      {/* Navigation buttons */}
-      {currentIndex > 0 && (
-        <button 
-          onClick={handlePrev}
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white z-10 bg-black/50 rounded-full p-2"
-          aria-label="Previous story"
-        >
-          <ChevronLeft size={24} />
-        </button>
-      )}
-      
-      {currentIndex < stories.length - 1 && (
-        <button 
-          onClick={handleNext}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white z-10 bg-black/50 rounded-full p-2"
-          aria-label="Next story"
-        >
-          <ChevronRight size={24} />
         </button>
       )}
       
@@ -431,23 +292,36 @@ export default function StoryViewer({ storyId, stories, currentIndex, onClose, o
             className="max-w-full max-h-full object-contain"
           />
         ) : (
-          <>
-            <video
-              ref={videoRef}
-              src={story.media_url}
-              className="max-w-full max-h-full object-contain"
-              controls={false}
-              playsInline
-              muted
-            />
-            {videoLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-              </div>
-            )}
-          </>
+          <video
+            ref={videoRef}
+            src={story.media_url}
+            className="max-w-full max-h-full object-contain"
+            controls={false}
+            autoPlay
+            loop
+          />
         )}
       </div>
+      
+      {/* Navigation buttons */}
+      {currentIndex > 0 && (
+        <button 
+          onClick={handlePrev}
+          className="absolute left-0 top-0 bottom-0 w-1/3 z-10"
+        />
+      )}
+      
+      <button 
+        onClick={handleRestart}
+        className="absolute left-1/3 top-0 bottom-0 w-1/3 z-10"
+      />
+      
+      {currentIndex < stories.length - 1 && (
+        <button 
+          onClick={handleNext}
+          className="absolute right-0 top-0 bottom-0 w-1/3 z-10"
+        />
+      )}
     </div>
   )
 }
