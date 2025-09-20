@@ -290,8 +290,8 @@ function App() {
     images: {
       heroBackground: 'https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg',
       aboutImage: 'https://images.pexels.com/photos/1581384/pexels-photo-1581384.jpeg',
-      logoUrl: 'https://lumi.new/lumi.ing/logo.png',
-      favicon: 'https://lumi.new/lumi.ing/logo.png'
+      logoUrl: '',
+      favicon: '/favicon.ico'
     },
     content: {
       siteName: {
@@ -382,7 +382,7 @@ function App() {
           },
           {
             role: { en: 'Food Blogger', ar: 'مدون طعام', de: 'Essensblogger' },
-            content: { en: 'Every dish tells a story. The presentation is art, and the taste is pure magic. Highly recommended!', ar: 'كل طبق يحكي قصة. العرض فن، والطعم سحر خالص. موصى به بشدة!', de: 'Jedes Gericht erzählt eine Geschichte. Die Präsentation ist Kunst, und der Geschmack ist reine Magie. Sehr empfehlenswert!' }
+            content: { en: 'Every dish tells a story. The presentation is art, and the taste is pure magic. Highly recommended!', ar: 'كل طبق يحكي قصة. العرض فن،والطعم سحر خالص. موصى به بشدة!', de: 'Jedes Gericht erzählt eine Geschichte. Die Präsentation ist Kunst, und der Geschmack ist reine Magie. Sehr empfehlenswert!' }
           }
         ],
         stats: {
@@ -604,14 +604,29 @@ function App() {
       }
     }
     
+    // Lade secondary admins aus localStorage
+    let loadedAdmins: Admin[] = [
+      {
+        id: '1',
+        email: 'ahmedgamer748@gmail.com',
+        password: 'Ahmed.000',
+        role: 'main',
+        name: 'Ahmed - Haupt-Administrator',
+        number: 0 // Haupt-Admin hat immer Nummer 0
+      }
+    ];
+    
     if (savedAdmins) {
       try {
-        const parsedAdmins = JSON.parse(savedAdmins)
-        setAdmins(prev => [...prev.filter(a => a.role === 'main'), ...parsedAdmins.filter((a: Admin) => a.role === 'secondary')])
+        const parsedAdmins: Admin[] = JSON.parse(savedAdmins)
+        // Füge die geladenen secondary admins hinzu
+        loadedAdmins = [...loadedAdmins, ...parsedAdmins]
       } catch (error) {
         console.error('Fehler beim Laden der Admins:', error)
       }
     }
+    
+    setAdmins(loadedAdmins)
 
     if (savedDesserts) {
       try {
@@ -622,19 +637,22 @@ function App() {
       }
     }
 
+    // Prüfe Authentifizierungsstatus nachdem alle Admins geladen wurden
     if (savedAuth) {
       try {
-        const authData = JSON.parse(savedAuth)
-        // Prüfe ob der Admin noch existiert
-        const adminExists = admins.some(a => a.id === authData.id)
+        const authData: Admin = JSON.parse(savedAuth)
+        // Prüfe ob der Admin (Haupt- oder Secondary) noch existiert
+        const adminExists = loadedAdmins.some(a => a.id === authData.id)
         if (adminExists) {
           setIsAuthenticated(true)
           setCurrentAdmin(authData)
         } else {
+          // Wenn der Admin nicht existiert, entferne die Authentifizierungsdaten
           localStorage.removeItem('restaurant_auth')
         }
       } catch (error) {
         console.error('Fehler beim Laden der Authentifizierung:', error)
+        localStorage.removeItem('restaurant_auth')
       }
     }
 
@@ -700,6 +718,7 @@ function App() {
 
   // Speichere Daten
   useEffect(() => {
+    // Speichere nur secondary admins (nicht den Haupt-Admin)
     const secondaryAdmins = admins.filter(a => a.role === 'secondary')
     localStorage.setItem('restaurant_admins', JSON.stringify(secondaryAdmins))
   }, [admins])
@@ -722,10 +741,12 @@ function App() {
   }
 
   const login = (email: string, password: string): boolean => {
+    // Suche nach Admin in allen Admins (Haupt- und Secondary)
     const admin = admins.find(a => a.email === email && a.password === password)
     if (admin) {
       setIsAuthenticated(true)
       setCurrentAdmin(admin)
+      // Speichere Authentifizierungsdaten in localStorage
       localStorage.setItem('restaurant_auth', JSON.stringify(admin))
       return true
     }
@@ -736,6 +757,7 @@ function App() {
     setIsAuthenticated(false)
     setCurrentAdmin(null)
     setIsEditMode(false)
+    // Entferne Authentifizierungsdaten aus localStorage
     localStorage.removeItem('restaurant_auth')
   }
 
