@@ -1,12 +1,28 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useAuthStore } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
+import StoryViewer from './StoryViewer'
 
 // Define types for our data
 interface User {
   id: string
   username: string
   avatar_url: string
+}
+
+// Interface for the raw data from Supabase
+interface RawStory {
+  id: string
+  media_url: string
+  media_type: string
+  created_at: string
+  user_id: string
+  users: Array<{
+    id: string
+    username: string
+    avatar_url: string
+  }>
 }
 
 interface Story {
@@ -18,271 +34,145 @@ interface Story {
   users: User | null
 }
 
-interface StoryViewerProps {
-  storyId: string
-  stories: Story[]
-  currentIndex: number
-  onClose: () => void
-  onNavigate: (index: number) => void
-}
-
-export default function StoryViewer({ 
-  storyId, 
-  stories, 
-  currentIndex, 
-  onClose, 
-  onNavigate 
-}: StoryViewerProps) {
-  const [progress, setProgress] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-  const [isVideo, setIsVideo] = useState(false)
-  const [videoLoading, setVideoLoading] = useState(true)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+export default function Stories() {
+  const user = useAuthStore((state) => state.user) as User
+  const [stories, setStories] = useState<Story[]>([])
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState<number | null>(null)
   
-  const currentStory = stories[currentIndex]
-  
-  // Check if media is a video
-  useEffect(() => {
-    if (currentStory?.media_type === 'video') {
-      setIsVideo(true)
-    } else {
-      setIsVideo(false)
-    }
-  }, [currentStory])
-  
-  // Handle story progress
-  useEffect(() => {
-    if (isPaused || !currentStory) return
-    
-    // Clear any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-    }
-    
-    // Reset progress
-    setProgress(0)
-    
-    // Set up new interval
-    intervalRef.current = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          // Auto navigate to next story
-          if (currentIndex < stories.length - 1) {
-            onNavigate(currentIndex + 1)
-          } else {
-            onClose()
-          }
-          return 0
-        }
-        return prev + 1
-      })
-    }, 50) // Update every 50ms for smooth animation
-    
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+  // Fetch user data for a specific user ID
+  const fetchUserData = async (userId: string): Promise<User | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, username, avatar_url')
+        .eq('id', userId)
+        .single()
+        
+      if (error) {
+        console.error('Error fetching user data:', error.message || error)
+        return null
       }
+      
+      return data
+    } catch (error) {
+      console.error('Exception fetching user data:', error)
+      return null
     }
-  }, [currentIndex, currentStory, isPaused, stories.length, onNavigate, onClose])
+  }
   
-  // Handle video events
-  useEffect(() => {
-    if (!isVideo || !videoRef.current) return
-    
-    const video = videoRef.current
-    
-    const handleVideoLoaded = () => {
-      setVideoLoading(false)
-      if (!isPaused) {
-        video.play().catch(e => console.error('Error playing video:', e))
-      }
-    }
-    
-    const handleVideoEnd = () => {
-      // Auto navigate to next story when video ends
-      if (currentIndex < stories.length - 1) {
-        onNavigate(currentIndex + 1)
+  const fetchStories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select(`
+          id,
+          media_url,
+          media_type,
+          created_at,
+          user_id,
+          users (id, username, avatar_url)
+        `)
+        .filter('expires_at', 'gt', new Date().toISOString())
+        .order('created_at', { ascending: false })
+      
+      if (error) {
+        console.error('Fehler bei Stories:', error.message || error)
       } else {
-        onClose()
+        // Handle the nested user data properly
+        const storiesData: Story[] = await Promise.all(
+          (data as RawStory[]).map(async (story: RawStory) => {
+            // Extract the first user from the array or null if empty
+            let userData = story.users && story.users.length > 0 ? story.users[0] : null
+            
+            // If user data is missing but we have a user_id, fetch the user data
+            if (!userData && story.user_id) {
+              userData = await fetchUserData(story.user_id)
+            }
+            
+            return {
+              id: story.id,
+              media_url: story.media_url,
+              media_type: story.media_type,
+              created_at: story.created_at,
+              user_id: story.user_id,
+              users: userData
+            }
+          })
+        )
+        
+        setStories(storiesData || [])
       }
+    } catch (error) {
+      console.error('Exception fetching stories:', error)
     }
-    
-    video.addEventListener('loadeddata', handleVideoLoaded)
-    video.addEventListener('ended', handleVideoEnd)
-    
-    return () => {
-      video.removeEventListener('loadeddata', handleVideoLoaded)
-      video.removeEventListener('ended', handleVideoEnd)
-    }
-  }, [isVideo, currentIndex, stories.length, onNavigate, onClose, isPaused])
+  }
   
-  // Handle keyboard navigation
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      } else if (e.key === 'ArrowRight') {
-        if (currentIndex < stories.length - 1) {
-          onNavigate(currentIndex + 1)
-        }
-      } else if (e.key === 'ArrowLeft') {
-        if (currentIndex > 0) {
-          onNavigate(currentIndex - 1)
-        }
-      }
-    }
-    
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [currentIndex, stories.length, onNavigate, onClose])
+    if (!user) return
+    fetchStories()
+  }, [user])
   
-  // Handle touch events for mobile swipe navigation
-  const [touchStart, setTouchStart] = useState(0)
-  const [touchEnd, setTouchEnd] = useState(0)
-  
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX)
+  // Add a function to handle story click
+  const handleStoryClick = (index: number) => {
+    setSelectedStoryIndex(index)
   }
   
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-  }
-  
-  const handleTouchEnd = () => {
-    if (touchStart - touchEnd > 75) {
-      // Swipe left
-      if (currentIndex < stories.length - 1) {
-        onNavigate(currentIndex + 1)
-      }
-    } else if (touchEnd - touchStart > 75) {
-      // Swipe right
-      if (currentIndex > 0) {
-        onNavigate(currentIndex - 1)
-      }
-    }
-  }
-  
-  // Pause on hover/touch
-  const handleMouseEnter = () => {
-    setIsPaused(true)
-    if (isVideo && videoRef.current) {
-      videoRef.current.pause()
-    }
-  }
-  
-  const handleMouseLeave = () => {
-    setIsPaused(false)
-    if (isVideo && videoRef.current) {
-      videoRef.current.play().catch(e => console.error('Error playing video:', e))
-    }
-  }
-  
-  if (!currentStory) {
-    return null
+  const handleNavigate = (index: number) => {
+    // Use setTimeout to avoid updating state during render
+    setTimeout(() => {
+      setSelectedStoryIndex(index)
+    }, 0)
   }
   
   return (
-    <div 
-      className="fixed inset-0 bg-black z-50 flex items-center justify-center"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Close button */}
-      <button 
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
-        aria-label="Close story"
-      >
-        <X className="h-6 w-6" />
-      </button>
-      
-      {/* Navigation buttons */}
-      {currentIndex > 0 && (
-        <button 
-          onClick={() => onNavigate(currentIndex - 1)}
-          className="absolute left-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
-          aria-label="Previous story"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-      )}
-      
-      {currentIndex < stories.length - 1 && (
-        <button 
-          onClick={() => onNavigate(currentIndex + 1)}
-          className="absolute right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2"
-          aria-label="Next story"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </button>
-      )}
-      
-      {/* Progress indicators */}
-      <div className="absolute top-4 left-0 right-0 flex justify-center space-x-1 px-4 z-10">
-        {stories.map((_, index) => (
+    <>
+      <div className="flex space-x-4 overflow-x-auto pb-4 p-4 bg-black border-b border-gray-800">
+        {user && (
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 border-2 border-blue-500 rounded-full p-0.5">
+              <img
+                src={user.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username}
+                alt="You"
+                className="w-full h-full rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username
+                }}
+              />
+            </div>
+            <span className="text-xs text-white mt-1">Your Story</span>
+          </div>
+        )}
+        {stories.map((story, index) => (
           <div 
-            key={index} 
-            className="h-1 flex-1 bg-gray-700 rounded-full overflow-hidden"
+            key={story.id} 
+            className="flex flex-col items-center cursor-pointer"
+            onClick={() => handleStoryClick(index)}
           >
-            <div 
-              className={`h-full ${index === currentIndex ? 'bg-white' : 'bg-gray-600'}`}
-              style={{ 
-                width: index === currentIndex ? `${progress}%` : index < currentIndex ? '100%' : '0%',
-                transition: index === currentIndex ? 'width 0.05s linear' : 'none'
-              }}
-            />
+            <div className="w-16 h-16 border-2 border-gradient rounded-full p-0.5 bg-gradient-to-r from-yellow-400 to-pink-600">
+              <img
+                src={story.users?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (story.users?.username || story.user_id || 'user')}
+                alt={story.users?.username || 'User'}
+                className="w-full h-full rounded-full object-cover bg-white"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (story.users?.username || story.user_id || 'user')
+                }}
+              />
+            </div>
+            <span className="text-xs text-white mt-1 truncate w-16 text-center">
+              {story.users?.username || (story.user_id ? 'Loading...' : 'Gelöschter Nutzer')}
+            </span>
           </div>
         ))}
       </div>
-      
-      {/* User info */}
-      <div className="absolute top-16 left-4 right-4 z-10 flex items-center">
-        <img
-          src={currentStory.users?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (currentStory.users?.username || currentStory.user_id)}
-          alt={currentStory.users?.username || 'User'}
-          className="w-10 h-10 rounded-full border-2 border-white"
+      {selectedStoryIndex !== null && stories[selectedStoryIndex] && (
+        <StoryViewer 
+          storyId={stories[selectedStoryIndex].id} 
+          stories={stories}
+          currentIndex={selectedStoryIndex}
+          onClose={() => setSelectedStoryIndex(null)} 
+          onNavigate={handleNavigate}
         />
-        <div className="ml-3">
-          <p className="text-white font-semibold">{currentStory.users?.username || 'Unknown User'}</p>
-          <p className="text-gray-300 text-xs">
-            {new Date(currentStory.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </p>
-        </div>
-      </div>
-      
-      {/* Story content */}
-      <div className="w-full h-full flex items-center justify-center">
-        {isVideo ? (
-          <>
-            <video
-              ref={videoRef}
-              src={currentStory.media_url}
-              className="max-h-full max-w-full object-contain"
-              playsInline
-              muted
-              loop={false}
-              onLoadedData={() => setVideoLoading(false)}
-            />
-            {videoLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-              </div>
-            )}
-          </>
-        ) : (
-          <img
-            src={currentStory.media_url}
-            alt="Story"
-            className="max-h-full max-w-full object-contain"
-          />
-        )}
-      </div>
-    </div>
+      )}
+    </>
   )
 }
