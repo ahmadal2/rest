@@ -640,28 +640,26 @@ function App() {
       }
     }
 
-    // Setze einen Timeout, um sicherzustellen, dass die Admins geladen sind, bevor die Authentifizierung geprüft wird
-    setTimeout(() => {
-      // Prüfe Authentifizierungsstatus nachdem alle Admins geladen wurden
-      if (savedAuth) {
-        try {
-          const authData: Admin = JSON.parse(savedAuth)
-          // Prüfe ob der Admin (Haupt- oder Secondary) noch existiert
-          const adminExists = loadedAdmins.some(a => a.id === authData.id)
-          if (adminExists) {
-            setIsAuthenticated(true)
-            setCurrentAdmin(authData)
-          } else {
-            // Wenn der Admin nicht existiert, entferne die Authentifizierungsdaten
-            localStorage.removeItem('restaurant_auth')
-          }
-        } catch (error) {
-          console.error('Fehler beim Laden der Authentifizierung:', error)
+    // Prüfe Authentifizierungsstatus nachdem alle Admins geladen wurden
+    if (savedAuth) {
+      try {
+        const authData: Admin = JSON.parse(savedAuth)
+        // Prüfe ob der Admin (Haupt- oder Secondary) noch existiert
+        const adminExists = loadedAdmins.some(a => a.id === authData.id)
+        if (adminExists) {
+          setIsAuthenticated(true)
+          setCurrentAdmin(authData)
+        } else {
+          // Wenn der Admin nicht existiert, entferne die Authentifizierungsdaten
           localStorage.removeItem('restaurant_auth')
         }
+      } catch (error) {
+        console.error('Fehler beim Laden der Authentifizierung:', error)
+        localStorage.removeItem('restaurant_auth')
       }
-      setLoading(false)
-    }, 100)
+    }
+    
+    setLoading(false)
   }, [])
 
   // Thema anwenden
@@ -963,7 +961,7 @@ function App() {
       <div className="min-h-screen">
         <RestaurantVideoIntro onIntroComplete={handleIntroComplete} />
         <div 
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-full cursor-pointer hover:bg-white/30 transition-all duration-300"
+          className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full cursor-pointer hover:bg-white/30 transition-all duration-300 text-sm"
           onClick={() => setShowIntro(false)}
         >
           Skip Intro

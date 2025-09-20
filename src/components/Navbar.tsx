@@ -674,20 +674,14 @@ const Navbar: React.FC = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                // Hidden admin login button - only visible when Ctrl+Shift+L is pressed
-                <div className="hidden">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl font-bold shadow-lg hover:shadow-2xl transition-all duration-500 border border-white/20"
-                  >
-                    <span className="flex items-center space-x-2">
-                      <Zap size={16} />
-                      <span>Admin Login</span>
-                    </span>
-                  </motion.button>
-                </div>
+                // Hidden admin login button - shown as a small dot
+                <motion.button
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30"
+                  aria-label="Admin Login"
+                />
               )}
 
               {/* Mobile Menu */}
