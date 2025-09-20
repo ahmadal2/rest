@@ -493,10 +493,10 @@ function App() {
   const [admins, setAdmins] = useState<Admin[]>([
     {
       id: '1',
-      email: 'ahmedgamer748@gmail.com',
-      password: 'Ahmed.000',
+      email: '123@gmail.com',
+      password: '1234',
       role: 'main',
-      name: 'Ahmed - Haupt-Administrator',
+      name: 'Haupt-Administrator',
       number: 0 // Haupt-Admin hat immer Nummer 0
     }
   ])
@@ -611,10 +611,10 @@ function App() {
     let loadedAdmins: Admin[] = [
       {
         id: '1',
-        email: 'ahmedgamer748@gmail.com',
-        password: 'Ahmed.000',
+        email: '123@gmail.com',
+        password: '1234',
         role: 'main',
-        name: 'Ahmed - Haupt-Administrator',
+        name: 'Haupt-Administrator',
         number: 0 // Haupt-Admin hat immer Nummer 0
       }
     ];
