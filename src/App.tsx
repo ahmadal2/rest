@@ -290,8 +290,8 @@ function App() {
     images: {
       heroBackground: 'https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg',
       aboutImage: 'https://images.pexels.com/photos/1581384/pexels-photo-1581384.jpeg',
-      logoUrl: '',
-      favicon: '/favicon.ico'
+      logoUrl: '/im/logo.png',
+      favicon: '/im/logo.png'
     },
     content: {
       siteName: {
