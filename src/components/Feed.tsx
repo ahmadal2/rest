@@ -1,5 +1,5 @@
 'use client'  // ✅ Diese Zeile muss ganz oben stehen
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import Post from './Post'
 
@@ -41,6 +41,7 @@ export default function Feed() {
   const [posts, setPosts] = useState<PostType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const channelRef = useRef<any>(null)
 
   // Fetch user data for a specific user ID with proper return type
   const fetchUserData = async (userId: string): Promise<User | null> => {
@@ -127,8 +128,62 @@ export default function Feed() {
     }
   }
 
+  // Set up real-time subscription for new posts
+  const setupRealtimeSubscription = () => {
+    // Create a channel for real-time updates
+    const channel = supabase
+      .channel('public:posts')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts',
+        },
+        async (payload) => {
+          console.log('New post received:', payload)
+          const newPost = payload.new as {
+            id: string
+            title: string
+            caption: string
+            media_url: string
+            user_id: string
+            created_at: string
+          }
+
+          // Fetch user data for this post
+          const userData = await fetchUserData(newPost.user_id)
+
+          // Create a post object in the format we use
+          const formattedPost: PostType = {
+            id: newPost.id,
+            title: newPost.title,
+            caption: newPost.caption,
+            media_url: newPost.media_url,
+            user_id: newPost.user_id,
+            created_at: newPost.created_at,
+            users: userData
+          }
+
+          // Add the new post to the beginning of the posts array
+          setPosts(prevPosts => [formattedPost, ...prevPosts])
+        }
+      )
+      .subscribe()
+
+    channelRef.current = channel
+  }
+
   useEffect(() => {
     fetchPosts()
+    setupRealtimeSubscription()
+
+    // Clean up the subscription when the component unmounts
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
+    }
   }, [])
 
   if (loading) return <p className="text-center p-4">Lade...</p>
