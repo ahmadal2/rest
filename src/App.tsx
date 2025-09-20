@@ -637,26 +637,28 @@ function App() {
       }
     }
 
-    // Prüfe Authentifizierungsstatus nachdem alle Admins geladen wurden
-    if (savedAuth) {
-      try {
-        const authData: Admin = JSON.parse(savedAuth)
-        // Prüfe ob der Admin (Haupt- oder Secondary) noch existiert
-        const adminExists = loadedAdmins.some(a => a.id === authData.id)
-        if (adminExists) {
-          setIsAuthenticated(true)
-          setCurrentAdmin(authData)
-        } else {
-          // Wenn der Admin nicht existiert, entferne die Authentifizierungsdaten
+    // Setze einen Timeout, um sicherzustellen, dass die Admins geladen sind, bevor die Authentifizierung geprüft wird
+    setTimeout(() => {
+      // Prüfe Authentifizierungsstatus nachdem alle Admins geladen wurden
+      if (savedAuth) {
+        try {
+          const authData: Admin = JSON.parse(savedAuth)
+          // Prüfe ob der Admin (Haupt- oder Secondary) noch existiert
+          const adminExists = loadedAdmins.some(a => a.id === authData.id)
+          if (adminExists) {
+            setIsAuthenticated(true)
+            setCurrentAdmin(authData)
+          } else {
+            // Wenn der Admin nicht existiert, entferne die Authentifizierungsdaten
+            localStorage.removeItem('restaurant_auth')
+          }
+        } catch (error) {
+          console.error('Fehler beim Laden der Authentifizierung:', error)
           localStorage.removeItem('restaurant_auth')
         }
-      } catch (error) {
-        console.error('Fehler beim Laden der Authentifizierung:', error)
-        localStorage.removeItem('restaurant_auth')
       }
-    }
-
-    setLoading(false)
+      setLoading(false)
+    }, 100)
   }, [])
 
   // Thema anwenden
