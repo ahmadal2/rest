@@ -1,0 +1,65 @@
+/* Footer Styles using CSS Variables */
+
+.footer-container {
+  background-color: var(--color-footer-bg);
+  color: var(--color-footer-text);
+}
+
+.footer-accent-text {
+  color: var(--color-footer-accent);
+}
+
+.footer-icon-color {
+  color: var(--color-footer-icon);
+}
+
+.footer-border {
+  border-color: var(--color-footer-accent);
+}
+
+.footer-bg-accent {
+  background-color: var(--color-footer-accent);
+}
+
+.footer-bg-icon {
+  background-color: var(--color-footer-icon);
+}
+
+.footer-gradient {
+  background: linear-gradient(135deg, var(--color-footer-accent), var(--color-footer-icon));
+}
+
+.footer-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='var(--color-footer-accent)' fill-opacity='0.3'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.footer-link {
+  color: var(--color-footer-text);
+  opacity: 0.8;
+}
+
+.footer-link:hover {
+  color: var(--color-footer-accent);
+  opacity: 1;
+}
+
+.footer-input {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-footer-accent);
+  color: var(--color-footer-text);
+  opacity: 0.8;
+}
+
+.footer-input:focus {
+  box-shadow: 0 0 0 4px var(--color-footer-accent);
+  opacity: 1;
+}
+
+.footer-button {
+  background-color: var(--color-footer-accent);
+  color: var(--color-footer-text);
+}
+
+.footer-button:hover {
+  background-color: var(--color-footer-icon);
+}

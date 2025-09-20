@@ -1,0 +1,266 @@
+/* Modern Responsive Design for 2026 */
+
+/* Base responsive styles */
+.responsive-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Grid system for 2026 */
+.modern-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* Mobile first - 1 column */
+.modern-grid {
+  grid-template-columns: 1fr;
+}
+
+/* Tablet - 2 columns */
+@media (min-width: 768px) {
+  .modern-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop - 3 columns */
+@media (min-width: 1024px) {
+  .modern-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Large desktop - 4 columns */
+@media (min-width: 1280px) {
+  .modern-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Flexible cards for 2026 */
+.modern-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.modern-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive typography */
+.responsive-heading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1e293b;
+}
+
+.responsive-heading.h1 {
+  font-size: 2rem;
+}
+
+.responsive-heading.h2 {
+  font-size: 1.5rem;
+}
+
+.responsive-heading.h3 {
+  font-size: 1.25rem;
+}
+
+/* Tablet typography */
+@media (min-width: 768px) {
+  .responsive-heading.h1 {
+    font-size: 2.5rem;
+  }
+  
+  .responsive-heading.h2 {
+    font-size: 2rem;
+  }
+  
+  .responsive-heading.h3 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Desktop typography */
+@media (min-width: 1024px) {
+  .responsive-heading.h1 {
+    font-size: 3rem;
+  }
+  
+  .responsive-heading.h2 {
+    font-size: 2.25rem;
+  }
+  
+  .responsive-heading.h3 {
+    font-size: 1.75rem;
+  }
+}
+
+/* Modern buttons for 2026 */
+.modern-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.modern-button.primary {
+  background: linear-gradient(to right, #8b5cf6, #a855f7);
+  color: white;
+  box-shadow: 0 4px 6px rgba(139, 92, 246, 0.2);
+}
+
+.modern-button.primary:hover {
+  background: linear-gradient(to right, #7c3aed, #9333ea);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(139, 92, 246, 0.3);
+}
+
+.modern-button.secondary {
+  background: white;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+.modern-button.secondary:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive spacing */
+.responsive-section {
+  padding: 2rem 0;
+}
+
+.responsive-section.tight {
+  padding: 1rem 0;
+}
+
+.responsive-section.spacious {
+  padding: 4rem 0;
+}
+
+/* Tablet spacing */
+@media (min-width: 768px) {
+  .responsive-section {
+    padding: 3rem 0;
+  }
+  
+  .responsive-section.tight {
+    padding: 1.5rem 0;
+  }
+  
+  .responsive-section.spacious {
+    padding: 5rem 0;
+  }
+}
+
+/* Desktop spacing */
+@media (min-width: 1024px) {
+  .responsive-section {
+    padding: 4rem 0;
+  }
+  
+  .responsive-section.tight {
+    padding: 2rem 0;
+  }
+  
+  .responsive-section.spacious {
+    padding: 6rem 0;
+  }
+}
+
+/* Modern navigation */
+.modern-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+}
+
+.modern-nav .nav-links {
+  display: none;
+}
+
+.modern-nav .nav-links.active {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+@media (min-width: 768px) {
+  .modern-nav .nav-links {
+    display: flex;
+    flex-direction: row;
+    position: static;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+  }
+  
+  .modern-nav .nav-links.active {
+    display: flex;
+  }
+}
+
+/* Utility classes for 2026 */
+.center-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #8b5cf6, #0ea5e9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Responsive images */
+.responsive-image {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+/* Modern form elements */
+.modern-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
