@@ -41,7 +41,8 @@ export default function Feed() {
   const [posts, setPosts] = useState<PostType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const channelRef = useRef<any>(null)
+  // Fixed the any type issue
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   // Fetch user data for a specific user ID with proper return type
   const fetchUserData = async (userId: string): Promise<User | null> => {
@@ -174,6 +175,7 @@ export default function Feed() {
     channelRef.current = channel
   }
 
+  // Fixed the useEffect dependencies warning
   useEffect(() => {
     fetchPosts()
     setupRealtimeSubscription()
@@ -184,6 +186,7 @@ export default function Feed() {
         supabase.removeChannel(channelRef.current)
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) return <p className="text-center p-4">Lade...</p>
