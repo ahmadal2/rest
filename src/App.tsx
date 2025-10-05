@@ -274,7 +274,7 @@ function App() {
       primary: '#e31837', // Restaurant red
       secondary: '#2c5f2d', // Restaurant green
       accent: '#f1c40f', // Gold accent
-      background: 'linear-gradient(135deg, #fff7f0, #ff9f4d)',
+      background: 'linear-gradient(135deg, #fff7f0, #ff9f4d)', // Consistent background
       text: '#212529',
       cardBg: 'rgba(255, 255, 255, 0.9)',
       buttonPrimary: '#e31837',
@@ -284,7 +284,7 @@ function App() {
       footerText: '#ffffff',
       footerAccent: '#f4a261',
       footerIcon: '#e76f51',
-      heroBg: 'linear-gradient(135deg, #e31837 0%, #c41e3a 100%)',
+      heroBg: 'linear-gradient(135deg, #fff7f0, #ff9f4d)', // Consistent with main background
       headerBg: 'rgba(0, 0, 0, 0.7)'
     },
     images: {
@@ -982,11 +982,11 @@ function App() {
           {isEditMode && (
             <div className="fixed top-0 left-0 right-0 z-[100] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3 text-center font-semibold shadow-lg">
               <div className="flex items-center justify-center space-x-3">
-                <div className="animate-pulse">✏️</div>
+                <div>✏️</div>
                 <span className="text-sm md:text-base">Edit mode active - Click on any element to edit</span>
                 <button
                   onClick={() => setEditMode(false)}
-                  className="ml-3 bg-white/20 px-3 py-1 rounded-lg hover:bg-white/30 transition-all duration-300 font-medium text-sm"
+                  className="ml-3 bg-white/20 px-3 py-1 rounded-lg hover:bg-white/30 font-medium text-sm"
                 >
                   Exit
                 </button>
@@ -994,17 +994,8 @@ function App() {
             </div>
           )}
 
-          {/* Modern Restaurant Background - Updated with requested gradient */}
+          {/* Modern Restaurant Background - Updated with static gradient only */}
           <div className="fixed inset-0 -z-10" style={{ background: 'linear-gradient(135deg, #fff7f0, #ff9f4d)' }}>
-            {/* Subtle restaurant-themed patterns with muted orange tones */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(244,162,97,0.1),transparent_40%)]"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,rgba(231,111,81,0.1),transparent_40%)]"></div>
-            
-            {/* Static decorative elements for restaurant theme with muted orange tones */}
-            <div className="absolute top-10 left-10 w-16 h-16 rounded-full bg-amber-200/20"></div>
-            <div className="absolute top-1/4 right-20 w-12 h-12 rounded-full bg-orange-200/20"></div>
-            <div className="absolute bottom-1/3 left-1/4 w-16 h-16 rounded-full bg-amber-300/10"></div>
-            <div className="absolute bottom-20 right-1/3 w-20 h-20 rounded-full bg-orange-300/10"></div>
           </div>
 
           <Navbar />

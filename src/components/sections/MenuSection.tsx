@@ -194,8 +194,8 @@ const MenuSection: React.FC = () => {
               onClick={() => setActiveCategory(category.id)}
               className={`px-8 py-4 rounded-2xl font-medium transition-all duration-300 ${
                 activeCategory === category.id
-                  ? 'bg-gradient-to-r from-cyan-400 to-purple-600 text-white shadow-lg shadow-cyan-400/25'
-                  : 'glass text-gray-300 hover:bg-white/20'
+                  ? 'unified-button'
+                  : 'unified-button outline'
               }`}
             >
               {category.name}
@@ -249,8 +249,8 @@ const MenuSection: React.FC = () => {
                   onClick={(e) => handleFavoriteToggle(item.id, e)}
                   className={`absolute top-4 right-4 p-2 rounded-full backdrop-blur-sm transition-all duration-300 ${
                     isFavorite(item.id) 
-                      ? 'bg-red-500/80 text-white' 
-                      : 'bg-black/30 text-white hover:bg-black/50'
+                      ? 'bg-orange-500/80 text-white' 
+                      : 'unified-button outline p-2'
                   }`}
                 >
                   <Heart 
@@ -325,7 +325,7 @@ const MenuSection: React.FC = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-full btn-primary text-sm py-3"
+                  className="w-full unified-button text-sm py-3"
                   onClick={(e) => {
                     e.stopPropagation()
                     openDessertModal(item)
@@ -395,7 +395,7 @@ const MenuSection: React.FC = () => {
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setSelectedDessert(null)}
-                  className="absolute top-6 right-6 p-3 bg-black/50 backdrop-blur-sm rounded-full text-white hover:bg-black/70 transition-all duration-300"
+                  className="absolute top-6 right-6 p-3 unified-button outline rounded-full transition-all duration-300"
                 >
                   <X size={24} />
                 </motion.button>
@@ -407,8 +407,8 @@ const MenuSection: React.FC = () => {
                   onClick={() => handleFavoriteToggle(selectedDessert.id)}
                   className={`absolute top-6 left-6 p-3 rounded-full backdrop-blur-sm transition-all duration-300 ${
                     isFavorite(selectedDessert.id) 
-                      ? 'bg-red-500/80 text-white' 
-                      : 'bg-black/50 text-white hover:bg-black/70'
+                      ? 'bg-orange-500/80 text-white' 
+                      : 'unified-button outline p-3'
                   }`}
                 >
                   <Heart 
@@ -564,7 +564,7 @@ const MenuSection: React.FC = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex-1 btn-primary py-4 text-lg flex items-center justify-center space-x-2"
+                    className="flex-1 unified-button py-4 text-lg flex items-center justify-center space-x-2"
                   >
                     <Plus size={20} />
                     <span>Bestellen</span>
@@ -575,8 +575,8 @@ const MenuSection: React.FC = () => {
                     onClick={() => handleFavoriteToggle(selectedDessert.id)}
                     className={`flex-1 py-4 text-lg flex items-center justify-center space-x-2 transition-all duration-300 ${
                       isFavorite(selectedDessert.id)
-                        ? 'bg-red-500 text-white'
-                        : 'btn-glass'
+                        ? 'unified-button secondary'
+                        : 'unified-button'
                     }`}
                   >
                     <Heart size={20} className={isFavorite(selectedDessert.id) ? 'fill-current' : ''} />

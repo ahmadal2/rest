@@ -6,8 +6,6 @@ import toast from 'react-hot-toast'
 import { useApp } from '../App'
 import EditableText from './EditableText'
 import './footer-styles.css'
-// TODO: When API calls are needed, import apiClient:
-// import { apiClient } from '../lib/client'
 
 const Footer: React.FC = () => {
   const { language, siteSettings, isEditMode, canEdit } = useApp()
@@ -94,7 +92,7 @@ const Footer: React.FC = () => {
                   href={social.href}
                   whileHover={{ scale: 1.2, y: -2 }}
                   whileTap={{ scale: 0.9 }}
-                  className="w-10 h-10 glass rounded-lg flex items-center justify-center text-gray-300 transition-colors duration-300 footer-link"
+                  className="w-10 h-10 glass rounded-lg flex items-center justify-center text-orange-500 transition-colors duration-300 footer-link"
                 >
                   <social.icon size={20} />
                 </motion.a>
@@ -125,7 +123,7 @@ const Footer: React.FC = () => {
                   <motion.a
                     href={link.href}
                     whileHover={{ x: 5 }}
-                    className="text-gray-300 transition-colors duration-300 flex items-center footer-link"
+                    className="text-gray-300 transition-colors duration-300 flex items-center footer-link hover:text-orange-500"
                   >
                     <span className="w-2 h-2 rounded-full mr-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 footer-bg-accent" />
                     {link.name}
@@ -154,7 +152,7 @@ const Footer: React.FC = () => {
             </EditableText>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
-                <MapPin size={20} className="mt-1 flex-shrink-0 footer-icon-color" />
+                <MapPin size={20} className="mt-1 flex-shrink-0 text-orange-500" />
                 {/* Editable Address */}
                 <EditableText
                   path="content.contactInfo.address"
@@ -170,7 +168,7 @@ const Footer: React.FC = () => {
                 </EditableText>
               </div>
               <div className="flex items-center space-x-3">
-                <Phone size={20} className="flex-shrink-0 footer-icon-color" />
+                <Phone size={20} className="flex-shrink-0 text-orange-500" />
                 {/* Editable Phone */}
                 <EditableText
                   path="content.contactInfo.phone"
@@ -183,7 +181,7 @@ const Footer: React.FC = () => {
                 </EditableText>
               </div>
               <div className="flex items-center space-x-3">
-                <Mail size={20} className="flex-shrink-0 footer-icon-color" />
+                <Mail size={20} className="flex-shrink-0 text-orange-500" />
                 {/* Editable Email */}
                 <EditableText
                   path="content.contactInfo.email"
@@ -254,7 +252,7 @@ const Footer: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 type="submit"
-                className="w-full font-semibold py-3 px-6 rounded-xl transition-colors duration-300 footer-button"
+                className="w-full font-semibold py-3 px-6 rounded-xl transition-all duration-300 unified-button"
               >
                 {/* Editable Subscribe Button */}
                 <EditableText
@@ -281,27 +279,8 @@ const Footer: React.FC = () => {
           style={{ borderTop: '1px solid var(--color-footer-accent)' }}
         >
           <p className="text-sm flex items-center" style={{ color: 'var(--color-footer-text)', opacity: '0.8' }}>
-            {/* Editable Copyright Text */}
-            <EditableText
-              path={`content.footer.rights.${language}`}
-              value={siteSettings.content.footer.rights[language]}
-              type="text"
-              className=""
-              placeholder="Rights text"
-            >
-              <span>© 2026 {siteSettings.content.siteName[language]}. {siteSettings.content.footer.rights[language]}</span>
-            </EditableText>
-            <Heart size={16} className="mx-2 footer-accent-text" />
-            {/* Editable Made With Text */}
-            <EditableText
-              path={`content.footer.madeWith.${language}`}
-              value={siteSettings.content.footer.madeWith[language]}
-              type="text"
-              className=""
-              placeholder="Made with text"
-            >
-              <span>{siteSettings.content.footer.madeWith[language]}</span>
-            </EditableText>
+            <span>© 2026 {siteSettings.content.siteName[language]}</span>
+            <Heart size={16} className="mx-2 text-orange-500" />
           </p>
           
           <div className="flex items-center space-x-6 mt-4 md:mt-0">

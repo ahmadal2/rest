@@ -113,7 +113,7 @@ const ContactSection: React.FC = () => {
                   className="glass rounded-2xl p-6 hover-lift"
                 >
                   <div className="flex items-center space-x-4 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
                       <info.icon size={24} className="text-white" />
                     </div>
                     <h3 className="text-lg font-display font-bold text-gray-900 dark:text-white">
@@ -176,7 +176,7 @@ const ContactSection: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowReservationModal(true)}
-                className="btn-primary flex items-center space-x-2 mx-auto"
+                className="unified-button flex items-center space-x-2 mx-auto"
               >
                 <Calendar size={20} />
                 <span>
@@ -313,13 +313,13 @@ const ContactSection: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 type="submit"
-                className="w-full btn-primary"
+                className="w-full unified-button"
               >
                 <EditableText
                   path={`content.contact.form.send.${language}`}
                   value={siteSettings.content.contact.form.send[language]}
                   type="text"
-                  className="w-full btn-primary"
+                  className="w-full"
                   placeholder="Send Button"
                 >
                   <span>{siteSettings.content.contact.form.send[language]}</span>

@@ -58,8 +58,56 @@
 .footer-button {
   background-color: var(--color-footer-accent);
   color: var(--color-footer-text);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .footer-button:hover {
   background-color: var(--color-footer-icon);
+  transform: translateY(-2px);
+}
+
+/* Unified button styles */
+.unified-button {
+  background: #ff6b35; /* Vibrant orange */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
+}
+
+.unified-button:hover {
+  background: #e55a2b; /* Darker orange */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(255, 107, 53, 0.3);
+}
+
+.unified-button.secondary {
+  background: #facf80; /* Light orange */
+  color: #000000; /* Black text for better contrast */
+  box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
+}
+
+.unified-button.secondary:hover {
+  background: #f8c366; /* Slightly darker light orange */
+  box-shadow: 0 6px 8px rgba(255, 107, 53, 0.3);
+}
+
+.unified-button.outline {
+  background: transparent;
+  color: #ff6b35; /* Vibrant orange */
+  border: 2px solid #ff6b35;
+  box-shadow: none;
+}
+
+.unified-button.outline:hover {
+  background: rgba(255, 107, 53, 0.1);
 }

@@ -10,38 +10,18 @@
   --color-accent: #facf80; /* Light orange */
   --color-tertiary: #ffc38f; /* Medium orange */
   
-  /* Modern Glass Backgrounds */
-  --bg-main: linear-gradient(135deg, 
-    #ffffff 0%,     /* Pure white */
-    #fff5ee 20%,    /* Very light orange tint */
-    #fffbf5 40%,    /* Subtle warm white */
-    #fff5ee 80%,    /* Light orange tint */
-    #ffffff 100%    /* Pure white */
-  );
+  /* Consistent Background - Using the warm gradient from user preferences */
+  --bg-main: linear-gradient(135deg, #fff7f0, #ff9f4d);
   
-  --bg-glass: rgba(255, 255, 255, 0.85);
-  --bg-glass-hover: rgba(255, 255, 255, 0.95);
-  --bg-glass-strong: rgba(255, 255, 255, 0.95);
-  --bg-glass-subtle: rgba(255, 255, 255, 0.6);
+  /* All sections will use the same background */
+  --bg-section: linear-gradient(135deg, #fff7f0, #ff9f4d);
   
-  /* Section Backgrounds - Subtle Variations */
-  --bg-section-1: linear-gradient(145deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 245, 238, 0.9) 50%,
-    rgba(255, 235, 220, 0.85) 100%
-  );
-  
-  --bg-section-2: linear-gradient(155deg,
-    rgba(255, 245, 238, 0.9) 0%,
-    rgba(255, 255, 255, 0.95) 50%,
-    rgba(240, 232, 225, 0.9) 100%
-  );
-  
-  --bg-section-3: linear-gradient(125deg,
-    rgba(255, 235, 220, 0.85) 0%,
-    rgba(255, 255, 255, 0.95) 50%,
-    rgba(255, 245, 238, 0.9) 100%
-  );
+  /* Unified button styles - Using orange colors */
+  --btn-primary-bg: #ff6b35; /* Vibrant orange */
+  --btn-primary-hover: #e55a2b; /* Darker orange */
+  --btn-secondary-bg: #facf80; /* Light orange */
+  --btn-secondary-hover: #f8c366; /* Slightly darker light orange */
+  --btn-outline-color: #ff6b35; /* Vibrant orange */
   
   /* Glass Properties */
   --glass-blur: blur(20px);
@@ -90,71 +70,71 @@ body {
   min-height: 100vh;
 }
 
-/* Subtle animated background */
-.modern-website::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 30% 40%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 70% 80%, rgba(0, 0, 0, 0.03) 0%, transparent 50%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 245, 238, 0.05) 100%);
-  pointer-events: none;
-  z-index: -2;
-  animation: subtleFlow 30s ease-in-out infinite;
-}
-
-@keyframes subtleFlow {
-  0%, 100% { 
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% { 
-    opacity: 0.8;
-    transform: scale(1.02);
-  }
-}
-
-/* Glass Morphism Sections */
+/* All sections use the same background */
 .glass-section {
   position: relative;
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--bg-section);
 }
 
 .section-alt-1 {
-  background: var(--bg-section-1);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--bg-section);
 }
 
 .section-alt-2 {
-  background: var(--bg-section-2);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--bg-section);
 }
 
 .section-alt-3 {
-  background: var(--bg-section-3);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--bg-section);
 }
 
-/* Hero with glass effect */
+/* Hero with consistent background */
 .hero-section {
-  background: linear-gradient(135deg, 
-    rgba(255, 107, 53, 0.95) 0%, 
-    rgba(247, 147, 30, 0.9) 50%, 
-    rgba(255, 71, 87, 0.95) 100%
-  );
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--bg-section);
   position: relative;
   overflow: hidden;
-  color: var(--text-white); /* White text on orange background */
+  color: var(--text-primary);
+}
+
+/* Unified button styles */
+.unified-button {
+  background: var(--btn-primary-bg);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
+}
+
+.unified-button:hover {
+  background: var(--btn-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(255, 107, 53, 0.3);
+}
+
+.unified-button.secondary {
+  background: var(--btn-secondary-bg);
+  color: #000000; /* Black text for better contrast on light orange */
+  box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
+}
+
+.unified-button.secondary:hover {
+  background: var(--btn-secondary-hover);
+  box-shadow: 0 6px 8px rgba(255, 107, 53, 0.3);
+}
+
+.unified-button.outline {
+  background: transparent;
+  color: var(--btn-outline-color);
+  border: 2px solid var(--btn-outline-color);
+  box-shadow: none;
+}
+
+.unified-button.outline:hover {
+  background: rgba(255, 107, 53, 0.1);
 }
 
 /* Floating glass elements */
@@ -307,7 +287,7 @@ body {
 /* Modern Glass Buttons */
 .btn-primary {
   @apply px-8 py-4 rounded-2xl font-semibold text-white transition-all duration-500 transform hover:scale-105;
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); /* Orange gradient */
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 
     0 8px 32px rgba(255, 107, 53, 0.3),
@@ -318,12 +298,18 @@ body {
 
 .btn-secondary {
   @apply px-8 py-4 rounded-2xl font-semibold transition-all duration-500 transform hover:scale-105;
-  background: var(--bg-glass-strong);
-  color: var(--text-primary); /* Black text */
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  background: #facf80; /* Light orange */
+  color: #000000; /* Black text for better contrast */
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.btn-secondary:hover {
+  background: #f8c366; /* Slightly darker light orange */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(255, 107, 53, 0.3);
 }
 
 .btn-glass {
@@ -344,11 +330,11 @@ body {
 
 .danger-btn {
   @apply px-6 py-3 rounded-xl font-medium text-white transition-all duration-300 transform hover:scale-105;
-  background: linear-gradient(135deg, rgba(251, 65, 84, 0.95), rgba(200, 35, 51, 0.95));
+  background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%); /* Orange gradient */
   border: 1px solid rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 16px rgba(220, 53, 69, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
 }
 
 /* Glass Form Elements */

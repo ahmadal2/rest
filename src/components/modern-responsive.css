@@ -105,7 +105,7 @@
   }
 }
 
-/* Modern buttons for 2026 */
+/* Unified Modern buttons - Orange variant */
 .modern-button {
   display: inline-flex;
   align-items: center;
@@ -117,30 +117,39 @@
   transition: all 0.2s ease;
   border: none;
   cursor: pointer;
-}
-
-.modern-button.primary {
-  background: linear-gradient(to right, #8b5cf6, #a855f7);
+  background: #ff6b35; /* Vibrant orange */
   color: white;
-  box-shadow: 0 4px 6px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
 }
 
-.modern-button.primary:hover {
-  background: linear-gradient(to right, #7c3aed, #9333ea);
+.modern-button:hover {
+  background: #e55a2b; /* Darker orange */
   transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 6px 8px rgba(255, 107, 53, 0.3);
 }
 
 .modern-button.secondary {
-  background: white;
-  color: #1e293b;
-  border: 1px solid #e2e8f0;
+  background: #facf80; /* Light orange */
+  color: #000000; /* Black text for better contrast */
+  box-shadow: 0 4px 6px rgba(255, 107, 53, 0.2);
 }
 
 .modern-button.secondary:hover {
-  background: #f8fafc;
+  background: #f8c366; /* Slightly darker light orange */
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 8px rgba(255, 107, 53, 0.3);
+}
+
+.modern-button.outline {
+  background: transparent;
+  color: #ff6b35; /* Vibrant orange */
+  border: 2px solid #ff6b35;
+  box-shadow: none;
+}
+
+.modern-button.outline:hover {
+  background: rgba(255, 107, 53, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Responsive spacing */
@@ -236,7 +245,7 @@
 }
 
 .text-gradient {
-  background: linear-gradient(to right, #8b5cf6, #0ea5e9);
+  background: linear-gradient(to right, #ff6b35, #facf80); /* Orange gradient */
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -261,6 +270,6 @@
 
 .modern-input:focus {
   outline: none;
-  border-color: #8b5cf6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  border-color: #ff6b35; /* Vibrant orange */
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
